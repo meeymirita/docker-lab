@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docker + Bash Lab — крепкое владение с нуля</title>
+<style>
+  :root { --red: #0967d2; --red-dark: #063970; --red-light: #eaf3fc; --red-mid: #aecbee; --ink: #1c1c1c; }
+  body { font-family: 'DejaVu Sans', 'Segoe UI', Arial, sans-serif; font-size: 14px; line-height: 1.6; color: var(--ink); }
+  h1 { font-size: 28px; color: var(--red); margin-bottom: 4px; }
+  .subtitle { font-size: 15px; color: #555; margin-top: 0; margin-bottom: 18px; }
+  h2 { font-size: 21px; color: var(--red-dark); border-bottom: 3px solid var(--red-mid); padding-bottom: 4px; margin-top: 44px; }
+  h3 { font-size: 16px; color: #333; margin-top: 24px; margin-bottom: 6px; }
+  h4 { font-size: 14px; color: #555; margin-top: 16px; margin-bottom: 4px; }
+  p { margin: 7px 0; }
+  code { background: #f3f6fa; padding: 1px 5px; border-radius: 3px; font-family: 'DejaVu Sans Mono', Menlo, Consolas, monospace; font-size: 12.5px; }
+  pre { background: #f7fafd; border: 1px solid #d8e4f2; border-left: 4px solid var(--red); border-radius: 4px; padding: 10px 12px; font-family: 'DejaVu Sans Mono', Menlo, Consolas, monospace; font-size: 12px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 16px 0; font-size: 12.5px; }
+  th, td { border: 1px solid #ddd; padding: 6px 9px; text-align: left; vertical-align: top; }
+  th { background: var(--red-light); color: var(--red-dark); }
+  tr:nth-child(even) td { background: #fafafa; }
+  ul, ol { margin: 4px 0 10px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .tag { display: inline-block; color: #fff; font-size: 11px; font-weight: bold; padding: 1px 8px; border-radius: 3px; margin-bottom: 5px; }
+  .insight-box { background: var(--red-light); border: 1px solid var(--red-mid); border-left: 5px solid var(--red); border-radius: 4px; padding: 8px 14px; margin: 12px 0; }
+  .insight-box .tag { background: var(--red); }
+  .fix-box { background: #f1faf3; border: 1px solid #bfe4c7; border-left: 5px solid #2f9e4a; border-radius: 4px; padding: 8px 14px; margin: 6px 0 14px 0; }
+  .fix-box .tag { background: #2f9e4a; }
+  .note-box { background: #f4f4f6; border: 1px solid #d9d9e0; border-left: 5px solid #555a6e; border-radius: 4px; padding: 8px 14px; margin: 12px 0; }
+  .note-box .tag { background: #555a6e; }
+  .bash-box { background: #fdf6ec; border: 1px solid #f0dca0; border-left: 5px solid #b8860b; border-radius: 4px; padding: 8px 14px; margin: 12px 0; }
+  .bash-box .tag { background: #b8860b; }
+  .next-box { background: #fff8e6; border: 1px solid #f0dca0; border-left: 5px solid #e0a800; border-radius: 4px; padding: 8px 14px; margin: 14px 0 6px 0; font-size: 13px; }
+  .next-box .tag { background: #e0a800; color: #3a2a00; }
+  .next-box ul { margin: 4px 0 2px 0; }
+  details.deep { border: 1px dashed var(--red-mid); border-radius: 4px; margin: 12px 0; background: #fff; }
+  details.deep summary { cursor: pointer; padding: 8px 14px; font-weight: bold; color: var(--red-dark); background: #eef4fb; border-radius: 4px; list-style: none; }
+  details.deep summary::before { content: '▸ '; }
+  details.deep[open] summary::before { content: '▾ '; }
+  details.deep .deep-body { padding: 6px 16px 10px 16px; }
+  .toc { background: #f3f8fd; border: 1px solid #d8e4f2; border-radius: 6px; padding: 14px 20px; margin: 16px 0 24px 0; }
+  .toc ol { padding-left: 18px; }
+  .small { font-size: 12px; color: #777; }
+  .fnref { color: var(--red); font-weight: bold; font-size: 0.75em; }
+  .glossary-item { margin: 0 0 10px 0; padding-left: 24px; text-indent: -24px; }
+  .glossary-item b { color: var(--red-dark); }
+  .step { margin: 22px 0 10px 0; }
+  .step-head { display: block; background: var(--red-dark); color: #fff; padding: 6px 12px; border-radius: 4px 4px 0 0; font-weight: bold; font-size: 14px; }
+  .step-head .num { display: inline-block; background: #fff; color: var(--red-dark); padding: 0 8px; border-radius: 3px; margin-right: 8px; font-size: 12.5px; }
+  .step-body { border: 1px solid var(--red-mid); border-top: none; border-radius: 0 0 4px 4px; padding: 10px 14px; }
+  .step-body pre { margin: 8px 0; }
+  .why { background: #fff8e6; border-left: 4px solid #e0a800; padding: 6px 12px; margin: 10px 0 4px 0; font-size: 13px; }
+  .why b { color: #8a6500; }
+  .file { font-family: 'DejaVu Sans Mono', Menlo, monospace; font-size: 12px; color: var(--red-dark); background: #e8f1fb; padding: 1px 6px; border-radius: 3px; }
+  .session-banner { background: linear-gradient(90deg, var(--red-dark), var(--red)); color: #fff; padding: 10px 16px; border-radius: 6px; margin: 28px 0 12px 0; font-size: 17px; font-weight: bold; }
+  .session-banner span { font-weight: normal; font-size: 12px; opacity: 0.9; margin-left: 10px; }
+  .page-break { display: none; }
+
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: #fff; }
+  .layout { display: flex; align-items: flex-start; }
+  .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; width: 300px; flex: 0 0 300px; background: var(--red-dark); color: #fff; padding: 52px 12px 16px 12px; box-sizing: border-box; font-size: 12.5px; transition: margin-left .2s; }
+  body.nav-collapsed .sidebar { margin-left: -300px; }
+  .sidebar .nav-title { font-size: 16px; font-weight: bold; color: #fff; margin-bottom: 8px; }
+  .sidebar ul { list-style: none; padding-left: 0; margin: 0; }
+  .sidebar li { margin: 1px 0; }
+  .sidebar a { color: #fff; text-decoration: none; display: block; padding: 4px 8px; border-radius: 4px; }
+  .sidebar a:hover { background: #fff; color: var(--red-dark); }
+  .sidebar .nav-steps { padding-left: 8px; border-left: 2px solid rgba(255,255,255,.4); margin: 4px 0 6px 8px; }
+  .sidebar .nav-steps a { font-size: 11.5px; color: #dcebfa; }
+  .sidebar .nav-steps a:hover { color: var(--red-dark); }
+  .sidebar .nav-session a { color: #fff; font-weight: bold; margin-top: 6px; background: rgba(255,255,255,.12); }
+  .sidebar a .mark { display: inline-block; width: 14px; color: #fff; font-weight: bold; }
+  .sidebar a.done { opacity: .75; }
+  .sidebar a.done .mark::before { content: '✓'; }
+  .sidebar .progress { margin: 6px 0 12px 0; }
+  .sidebar .bar { height: 8px; background: rgba(255,255,255,.25); border-radius: 4px; overflow: hidden; }
+  .sidebar .fill { height: 100%; width: 0; background: #fff; transition: width .3s; }
+  .sidebar .ptext { font-size: 11px; margin-top: 4px; color: #dcebfa; }
+  .sidebar .reset { margin-top: 16px; background: transparent; border: 1px solid rgba(255,255,255,.5); color: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+  .sidebar .reset:hover { background: #fff; color: var(--red-dark); }
+  #nav-toggle { position: fixed; top: 10px; left: 10px; z-index: 20; background: var(--red); color: #fff; border: none; border-radius: 6px; width: 38px; height: 34px; font-size: 20px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  #nav-toggle:hover { background: var(--red-dark); }
+  main { flex: 1; max-width: 960px; padding: 24px 44px 90px 44px; box-sizing: border-box; min-width: 0; }
+  body.nav-collapsed main { padding-left: 64px; }
+  h2, .step, .glossary-item, .session-banner { scroll-margin-top: 16px; }
+  a { color: var(--red); }
+  a.anchor { color: #90b8e0; text-decoration: none; margin-left: 6px; font-weight: normal; font-size: 0.8em; opacity: 0; }
+  h2:hover a.anchor, .step-head:hover a.anchor { opacity: 1; }
+  .step-head a.anchor { color: #fff; float: right; }
+  a.fnref { text-decoration: none; vertical-align: super; padding: 0 2px; }
+  a.fnref:hover { background: var(--red-light); border-radius: 3px; }
+  a.back { text-decoration: none; font-size: 0.9em; color: #6ea3d6; margin-left: 4px; }
+  .glossary-item:target, .step:target { outline: 2px solid var(--red); outline-offset: 4px; border-radius: 4px; }
+  h2:target { background: var(--red-light); }
+  .done-label { display: inline-block; margin-right: 8px; vertical-align: middle; }
+  .done-label input { width: 18px; height: 18px; accent-color: var(--red); cursor: pointer; vertical-align: middle; }
+  .step-head .done-label input { accent-color: #fff; }
+  h2.is-done { color: #999; border-bottom-color: #ddd; }
+  .step.is-done .step-head { background: #9e9e9e; }
+  .step.is-done .step-body { border-color: #ddd; }
+  .totop { position: fixed; right: 24px; bottom: 24px; background: var(--red); color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 20px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  @media (max-width: 900px) { .sidebar { position: fixed; z-index: 10; } main { padding: 56px 16px 60px 16px; } body.nav-collapsed main { padding-left: 16px; } }
+  @media print { .sidebar, .totop, #nav-toggle, a.anchor, a.back, .done-label { display: none; } .layout { display: block; } main { max-width: none; padding: 0; } a { color: inherit; text-decoration: none; } details.deep { border: none; } details.deep summary { display: none; } details.deep .deep-body { display: block; } }
+</style>
+</head>
+<body id="top">
+<button id="nav-toggle">✕</button>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+<div class="nav-title">🐳 Docker + Bash Lab</div>
+<div class="progress"><div class="bar"><div class="fill" id="progress-fill"></div></div><div class="ptext" id="progress-text">0 / 0</div></div>
+<ul>
+<li><a href="#sec-0" data-key="sec-0"><span class="mark"></span>0. Зачем этот лаб и что дальше</a></li>
+<li><a href="#sec-1" data-key="sec-1"><span class="mark"></span>1. Docker с нуля: проблема и модель</a></li>
+<li><a href="#sec-2" data-key="sec-2"><span class="mark"></span>2. Жизненный цикл контейнера</a></li>
+<li><a href="#sec-3" data-key="sec-3"><span class="mark"></span>3. Образы и Dockerfile</a></li>
+<li><a href="#sec-4" data-key="sec-4"><span class="mark"></span>4. Bash с нуля: параллельный трек</a></li>
+<li><a href="#sec-5" data-key="sec-5"><span class="mark"></span>5. ENTRYPOINT vs CMD: где встречаются Docker и Bash</a></li>
+<li><a href="#sec-6" data-key="sec-6"><span class="mark"></span>6. Тома и данные</a></li>
+<li><a href="#sec-7" data-key="sec-7"><span class="mark"></span>7. Сети в Docker</a></li>
+<li><a href="#sec-8" data-key="sec-8"><span class="mark"></span>8. Docker Compose</a></li>
+<li><a href="#sec-9" data-key="sec-9"><span class="mark"></span>9. Пошаговая сборка (3 сессии)</a>
+<ul class="nav-steps">
+<li class="nav-session"><a href="#session-1">Сессия 1</a></li>
+<li><a href="#step-1-1" data-key="step-1-1"><span class="mark"></span>1.1 Проект и первый Dockerfile</a></li>
+<li><a href="#step-1-2" data-key="step-1-2"><span class="mark"></span>1.2 .dockerignore и контекст сборки</a></li>
+<li><a href="#step-1-3" data-key="step-1-3"><span class="mark"></span>1.3 Первый bash-entrypoint</a></li>
+<li><a href="#step-1-4" data-key="step-1-4"><span class="mark"></span>1.4 run, exec, logs, inspect</a></li>
+<li><a href="#step-1-5" data-key="step-1-5"><span class="mark"></span>1.5 Bash-практика: усложняем entrypoint</a></li>
+<li class="nav-session"><a href="#session-2">Сессия 2</a></li>
+<li><a href="#step-2-1" data-key="step-2-1"><span class="mark"></span>2.1 PostgreSQL и volume для данных</a></li>
+<li><a href="#step-2-2" data-key="step-2-2"><span class="mark"></span>2.2 Своя сеть и DNS между контейнерами</a></li>
+<li><a href="#step-2-3" data-key="step-2-3"><span class="mark"></span>2.3 wait-for-postgres.sh на bash</a></li>
+<li><a href="#step-2-4" data-key="step-2-4"><span class="mark"></span>2.4 PID 1, сигналы и trap</a></li>
+<li><a href="#step-2-5" data-key="step-2-5"><span class="mark"></span>2.5 Multi-stage build</a></li>
+<li class="nav-session"><a href="#session-3">Сессия 3</a></li>
+<li><a href="#step-3-1" data-key="step-3-1"><span class="mark"></span>3.1 docker-compose.yml целиком</a></li>
+<li><a href="#step-3-2" data-key="step-3-2"><span class="mark"></span>3.2 .env и секреты</a></li>
+<li><a href="#step-3-3" data-key="step-3-3"><span class="mark"></span>3.3 restart policies и лимиты ресурсов</a></li>
+<li><a href="#step-3-4" data-key="step-3-4"><span class="mark"></span>3.4 Production Hell — без подсказок</a></li>
+</ul>
+</li>
+<li><a href="#sec-10" data-key="sec-10"><span class="mark"></span>10. Чек-лист концепций</a></li>
+<li><a href="#sec-11" data-key="sec-11"><span class="mark"></span>11. Глоссарий терминов</a></li>
+<li><a href="#sec-12" data-key="sec-12"><span class="mark"></span>12. Вопросы для самопроверки</a></li>
+<li><a href="#sec-13" data-key="sec-13"><span class="mark"></span>13. Что дальше — назад к Traefik Lab</a></li>
+</ul><button class="reset" id="reset-progress" title="Сбросить все галочки">Сбросить прогресс</button></nav>
+<main>
+
+<h1>🐳 Docker + Bash Lab — крепкое владение с нуля</h1>
+<p class="subtitle">Этот лаб — не про конкретный проект, а про фундамент: чистый Docker и bash, на котором пишутся
+entrypoint-скрипты. Никакого Traefik, никакого reverse proxy — только контейнеры, образы, сети, тома, Compose
+и bash ровно настолько, чтобы уверенно читать и писать entrypoint'ы. После этого лаба вернётесь к Traefik Lab —
+и разделы 1–9 там перестанут быть набором незнакомых слов.</p>
+
+<div class="note-box">
+<span class="tag">КАК ПОЛЬЗОВАТЬСЯ</span>
+<ul>
+<li>Разделы <a href="#sec-1">1</a>–<a href="#sec-8">8</a> — теория, читать по порядку один раз, дальше возвращаться по ссылкам.</li>
+<li>Раздел <a href="#sec-4">4</a> — это не отступление, а часть плана: bash изучается параллельно с Docker, потому что реальные entrypoint-скрипты в разделе <a href="#sec-5">5</a> и в сессии <a href="#sec-9">9</a> написаны на нём.</li>
+<li>Раздел <a href="#sec-9">9</a> — сборка по шагам, 3 сессии. У каждого шага: код → «Зачем» → «🔬 Под капотом» (раскрывается) → bash-разбор, если в шаге есть скрипт.</li>
+<li>Блоки <span class="tag" style="background:#b8860b;">🐚 BASH</span> разбирают синтаксис построчно — не пропускайте их даже если тянет сразу копировать код.</li>
+<li>Все команды даны для <code>docker compose</code> (Compose V2, без дефиса). Если у вас старый <code>docker-compose</code> — команды те же, но через дефис.</li>
+</ul>
+</div>
+
+<div class="toc">
+<b>Содержание</b>
+<ol><li><a href="#sec-0">Зачем этот лаб и что дальше</a></li><li><a href="#sec-1">Docker с нуля: проблема и модель</a></li><li><a href="#sec-2">Жизненный цикл контейнера и основные команды</a></li><li><a href="#sec-3">Образы и Dockerfile</a></li><li><a href="#sec-4">Bash с нуля: параллельный трек</a></li><li><a href="#sec-5">ENTRYPOINT vs CMD: где встречаются Docker и Bash</a></li><li><a href="#sec-6">Тома и данные</a></li><li><a href="#sec-7">Сети в Docker</a></li><li><a href="#sec-8">Docker Compose</a></li><li><a href="#sec-9">Пошаговая сборка проекта (3 сессии)</a></li><li><a href="#sec-10">Чек-лист концепций</a></li><li><a href="#sec-11">Глоссарий терминов</a></li><li><a href="#sec-12">Вопросы для самопроверки / собеседования</a></li><li><a href="#sec-13">Что дальше: дорожная карта</a></li></ol>
+</div>
+
+<h2 id="sec-0"><label class="done-label" title="Отметить раздел пройденным"><input type="checkbox" class="done" data-key="sec-0"></label>0. Зачем этот лаб и что дальше <a class="anchor" href="#sec-0">#</a></h2>
+<p>В Traefik Lab был раздел «Введение в Docker: с нуля» — но это была ровно одна страница на весь фундамент, а
+дальше лаб сразу прыгал в EntryPoint'ы, роутеры и labels. Если после того раздела Docker всё ещё ощущался как
+набор заклинаний — дело не в вас, а в том, что один раздел физически не может закрыть тему, на которую обычно
+уходит неделя практики. Этот лаб решает именно это: здесь нет ни Traefik, ни reverse proxy, ни multi-service
+архитектуры ради архитектуры — только сам Docker, разобранный настолько подробно, насколько это вообще имеет
+смысл на старте, плюс bash — потому что каждый второй Dockerfile из раздела <a href="#sec-9">9</a> и почти весь
+Traefik Lab (entrypoint'ы, healthcheck-скрипты, wait-for-сервисы) написаны именно на нём.</p>
+<div class="insight-box">
+<span class="tag">💡 Почему bash идёт параллельно, а не после</span>
+<p>Bash в этом лабе — не отдельный курс «сначала выучи язык, потом пиши скрипты». Он вводится ровно в том объёме
+и в тот момент, когда становится нужен: сначала переменные и exit-коды (чтобы понимать вывод команд), затем
+условия и циклы (чтобы написать первый entrypoint), затем позиционные параметры и <code>trap</code> (когда
+понадобится обрабатывать сигналы). К концу лаба вы не будете «знать bash» в полном объёме — но будете уверенно
+читать и писать 95% того, что встречается в entrypoint-скриптах реальных проектов.</p>
+</div>
+<p>Дальше — трек полностью автономный: всё, что нужно для практики (Node.js-приложение, PostgreSQL, готовые
+Dockerfile'ы), даётся прямо в разделе <a href="#sec-9">9</a>, отдельно устанавливать ничего не придётся, кроме
+самого Docker. В разделе <a href="#sec-13">13</a> в конце — явная точка возврата к Traefik Lab с указанием, какие
+именно термины оттуда теперь будут понятны без пояснений.</p>
+
+<h2 id="sec-1"><label class="done-label"><input type="checkbox" class="done" data-key="sec-1"></label>1. Docker с нуля: проблема и модель <a class="anchor" href="#sec-1">#</a></h2>
+
+<h3>1.1 Проблема, которую решает Docker</h3>
+<p>Классическая боль: «у меня на компьютере работает, а на сервере — нет». Причина почти всегда в окружении:
+другая версия языка, не та версия библиотеки, забытая переменная окружения, отсутствующий системный пакет.
+Docker решает это не тем, что «чинит» окружение, а тем, что убирает саму зависимость от него: приложение
+упаковывается вместе <b>со всем, что ему нужно для работы</b> — конкретной версией рантайма, библиотеками,
+файлами конфигурации — в один переносимый пакет (образ). Этот пакет запускается одинаково у вас на ноутбуке,
+на сервере коллеги и в проде, потому что каждый раз запускается буквально одно и то же, а не «установленное
+заново по инструкции».</p>
+
+<h3>1.2 Контейнер — это не виртуальная машина</h3>
+<div class="insight-box">
+<span class="tag">💡 Главное отличие</span>
+<p>Виртуальная машина (VM) эмулирует целый компьютер: гипервизор создаёт виртуальное железо, на нём ставится
+полноценная гостевая операционная система со своим ядром — отдельным от ядра хоста. Отсюда вес в гигабайты и
+старт в десятки секунд. Контейнер — это обычный процесс операционной системы хоста, которому ядро <i>показывает
+урезанный, изолированный вид системы</i>: свою файловую систему, свою сеть, свой список процессов — как будто
+он единственный в отдельной коробке. Ядро при этом одно на всех контейнеров — то самое ядро хоста. Отсюда вес
+в мегабайты и старт за доли секунды.</p>
+</div>
+<details class="deep">
+<summary>🔬 Под капотом: как именно ядро Linux создаёт эту иллюзию</summary>
+<div class="deep-body">
+<p>Два механизма ядра Linux делают контейнеры возможными, и Docker их не изобретал — он лишь удобно ими управляет:</p>
+<ul>
+<li><b>namespaces (пространства имён)</b> — ограничивают, <i>что процесс видит</i>. Есть отдельные namespace для
+PID (процесс видит только «свои» процессы и себя как PID 1 — вернёмся к этому в разделе <a href="#sec-5">5</a>),
+для сети (своя таблица маршрутизации, свои интерфейсы), для файловой системы (свой корень <code>/</code>), для
+хостнейма и для пользователей. Контейнер — это процесс, запущенный в своём наборе namespace'ов.</li>
+<li><b>cgroups (control groups)</b> — ограничивают, <i>сколько ресурсов</i> процесс может использовать: CPU,
+память, диск, сеть. Именно cgroups стоят за флагами вроде <code>--memory</code> и <code>--cpus</code>, которые
+встретятся в разделе <a href="#step-3-3">3.3</a>.</li>
+</ul>
+<p>Сам Docker — это удобная обвязка поверх более низкоуровневых инструментов: <code>dockerd</code> (демон)
+делегирует запуск контейнеров <code>containerd</code>, а тот, в свою очередь, — <code>runc</code>, который
+непосредственно вызывает системные функции ядра для создания namespace'ов и cgroups. Понимать эту цепочку не
+обязательно для повседневной работы, но она объясняет, почему «Docker» и «контейнеры» — не синонимы: то же ядро
+использует и Podman (упомянутый в Traefik Lab), и containerd напрямую в Kubernetes.</p>
+</div>
+</details>
+
+<h3>1.3 Образ, контейнер, Dockerfile, registry — в чём разница</h3>
+<p>Это самая частая путаница у новичков, поэтому — отдельной таблицей.</p>
+<table>
+<tr><th>Термин</th><th>Что это</th><th>Аналогия из программирования</th></tr>
+<tr><td><b>Образ (image)</b></td><td>неизменяемый слепок: файловая система + метаданные о том, что запускать при старте. Хранится слоями (об этом в <a href="#sec-3">разделе 3</a>)</td><td>класс</td></tr>
+<tr><td><b>Контейнер (container)</b></td><td>запущенный (или остановленный) экземпляр образа — реальный процесс со своим ID, своей файловой системой поверх образа и своим состоянием</td><td>объект, созданный из класса</td></tr>
+<tr><td><b>Dockerfile</b></td><td>текстовый рецепт: как собрать образ шаг за шагом</td><td>исходный код класса</td></tr>
+<tr><td><b>Registry (реестр)</b></td><td>сервер, хранящий готовые образы; Docker Hub — крупнейший публичный реестр</td><td>система контроля версий / npm registry, но для образов</td></tr>
+</table>
+<p>Из одного образа можно запустить сколько угодно независимых контейнеров одновременно — так же, как из одного
+класса можно создать много объектов. Именно это лежит в основе масштабирования сервисов в Compose (раздел
+<a href="#sec-8">8</a>): несколько контейнеров — это несколько процессов из одного и того же образа, каждый со
+своим состоянием.</p>
+
+<h3>1.4 Установка и первая проверка</h3>
+<p>Если Docker ещё не установлен — на Linux это официальный скрипт <code>curl -fsSL https://get.docker.com | sh</code>
+(или пакет из репозитория дистрибутива), на macOS и Windows — Docker Desktop. Проверка, что всё работает:</p>
+<pre><code>docker version          # версия клиента и демона — если демон не отвечает, покажет ошибку подключения
+docker run hello-world  # эталонный "смок-тест": скачивает крошечный образ и запускает его</code></pre>
+<div class="fix-box"><span class="tag">✅ Если demon недоступен</span>
+<p>Ошибка вида <code>Cannot connect to the Docker daemon</code> почти всегда означает одно из двух: служба
+<code>dockerd</code> не запущена (<code>sudo systemctl start docker</code> на Linux), либо у вашего пользователя
+нет прав на сокет <code>/var/run/docker.sock</code> (нужно добавить пользователя в группу <code>docker</code> и
+перелогиниться, либо каждый раз запускать команды через <code>sudo</code>).</p></div>
+
+<h2 id="sec-2"><label class="done-label"><input type="checkbox" class="done" data-key="sec-2"></label>2. Жизненный цикл контейнера и основные команды <a class="anchor" href="#sec-2">#</a></h2>
+
+<h3>2.1 Команды, которые нужны каждый день</h3>
+<pre><code># образы
+docker pull nginx                    # скачать готовый образ с registry
+docker build -t myapp .              # собрать свой образ из Dockerfile в текущей папке
+docker images                        # список локальных образов
+
+# запуск контейнера
+docker run -d --name web -p 8080:80 nginx
+#            │        │      │
+#            │        │      └─ проброс порта: локальный:контейнерный
+#            │        └─ имя контейнера, чтобы не запоминать ID
+#            └─ detached: в фоне, не занимая терминал
+
+# наблюдение и управление
+docker ps                            # список запущенных контейнеров
+docker ps -a                         # + остановленные
+docker stop web                      # мягкая остановка (SIGTERM, потом SIGKILL — см. раздел 5)
+docker start web                     # снова запустить существующий (не пересоздавая) контейнер
+docker rm web                        # удалить остановленный контейнер
+docker rm -f web                     # остановить и сразу удалить</code></pre>
+
+<h3>2.2 Отладка живого контейнера</h3>
+<pre><code>docker logs web              # вывод stdout/stderr контейнера
+docker logs -f web           # то же самое, но "хвостом" — как tail -f
+docker exec -it web sh       # зайти внутрь работающего контейнера интерактивным шеллом
+#           │  │
+#           │  └─ имя оболочки; в Debian-based образах обычно есть bash, в Alpine — только sh
+#           └─ interactive + tty: полноценный интерактивный терминал
+docker inspect web           # весь JSON с метаданными: IP, volumes, env, healthcheck-статус
+docker stats                 # живой мониторинг CPU/памяти всех контейнеров, как top</code></pre>
+<div class="insight-box">
+<span class="tag">💡 exec — это не "зайти в контейнер", а запустить второй процесс рядом</span>
+<p><code>docker exec</code> не подключает вас к уже работающему процессу контейнера — он запускает <i>новый</i>
+процесс внутри тех же namespace'ов. Поэтому если внутри контейнера вообще нет шела (бывает в специально
+урезанных production-образах вроде <code>distroless</code>), <code>docker exec ... sh</code> просто не сработает
+— шел скачивать неоткуда, файловая система образа не содержит бинарника. Это осознанный компромисс безопасности,
+с которым вы столкнётесь, если будете гнаться за минимальным размером образа.</p>
+</div>
+
+<h3>2.3 Restart policy — что происходит, если контейнер упал</h3>
+<p>По умолчанию упавший контейнер просто остаётся в статусе <code>Exited</code> и не перезапускается сам.
+Это управляется флагом <code>--restart</code>:</p>
+<table>
+<tr><th>Значение</th><th>Поведение</th></tr>
+<tr><td><code>no</code></td><td>по умолчанию — никогда не перезапускать автоматически</td></tr>
+<tr><td><code>on-failure[:N]</code></td><td>перезапускать только если процесс завершился с ненулевым exit-кодом, максимум N раз</td></tr>
+<tr><td><code>unless-stopped</code></td><td>перезапускать всегда, кроме случаев, когда вы сами остановили контейнер (<code>docker stop</code>)</td></tr>
+<tr><td><code>always</code></td><td>перезапускать всегда, включая перезагрузку хоста (если демон настроен автозапускаться)</td></tr>
+</table>
+<p>Для долгоживущих сервисов (базы данных, воркеры) в проде почти всегда используется <code>unless-stopped</code> —
+подробнее в шаге <a href="#step-3-3">3.3</a>.</p>
+
+<h2 id="sec-3"><label class="done-label"><input type="checkbox" class="done" data-key="sec-3"></label>3. Образы и Dockerfile <a class="anchor" href="#sec-3">#</a></h2>
+
+<h3>3.1 Анатомия Dockerfile</h3>
+<pre><code>FROM node:20-slim          # базовый образ — с него начинается сборка
+WORKDIR /app                # рабочая директория внутри образа; создаётся, если её нет
+COPY package*.json ./       # скопировать файлы с хоста в образ
+RUN npm install --production # выполнить команду ВО ВРЕМЯ СБОРКИ, результат "запекается" в образ
+COPY . .                    # скопировать остальной код
+ENV NODE_ENV=production     # переменная окружения, доступная во время сборки и во всех контейнерах из этого образа
+ARG BUILD_VERSION=dev        # переменная, доступная ТОЛЬКО во время сборки (пример: docker build --build-arg BUILD_VERSION=1.2)
+EXPOSE 3000                  # документирует, какой порт слушает приложение — сам по себе НЕ пробрасывает порт
+USER node                    # с этой строки все команды и сам процесс выполняются от пользователя node, не от root
+CMD ["node", "server.js"]    # команда по умолчанию при старте КОНТЕЙНЕРА (не сборки)</code></pre>
+<div class="insight-box">
+<span class="tag">💡 RUN — это сборка, CMD — это запуск</span>
+<p>Самая частая путаница новичков: <code>RUN</code> выполняется один раз, во время <code>docker build</code>, и
+результат сохраняется в слое образа. <code>CMD</code> ничего не выполняет во время сборки — он просто записывает
+в метаданные образа, что делать, когда кто-то запустит из него контейнер через <code>docker run</code>. Если
+поменять только <code>CMD</code> и не пересобрать образ — команда не выполнится, пока не будет запущен новый
+контейнер.</p>
+</div>
+
+<h3>3.2 Слои и кэш сборки — под капотом</h3>
+<p>Каждая инструкция Dockerfile (кроме нескольких метаданных-инструкций вроде <code>EXPOSE</code>) создаёт новый
+<b>слой</b> — неизменяемый diff файловой системы относительно предыдущего слоя. Слои хранятся на диске отдельно
+и переиспользуются: если два образа имеют одинаковые первые N инструкций, они физически используют один и тот же
+набор слоёв на диске (технология union filesystem, чаще всего <code>overlay2</code>).</p>
+<details class="deep">
+<summary>🔬 Под капотом: почему порядок инструкций в Dockerfile определяет скорость сборки</summary>
+<div class="deep-body">
+<p>Docker кэширует каждый слой по хэшу инструкции и содержимого. При повторной сборке он идёт по Dockerfile
+сверху вниз и переиспользует слой из кэша, пока инструкция и её входные данные не изменились. Как только
+встречается изменившийся слой — <b>кэш всех слоёв ниже сбрасывается</b>, даже если они сами не менялись. Отсюда
+классическое правило: <i>класть редко изменяющиеся и "тяжёлые" по времени инструкции выше, часто изменяющиеся —
+ниже</i>.</p>
+<p>Наглядный пример — неправильный и правильный порядок для Node.js-проекта:</p>
+<pre><code># ❌ ПЛОХО: любое изменение кода инвалидирует npm install
+FROM node:20-slim
+WORKDIR /app
+COPY . .                     # копируем ВСЁ, включая исходники, которые меняются каждый коммит
+RUN npm install               # этот слой пересобирается заново при КАЖДОМ изменении кода — минуты вместо секунд
+
+# ✅ ХОРОШО: npm install кэшируется, пока не меняются package.json/package-lock.json
+FROM node:20-slim
+WORKDIR /app
+COPY package*.json ./         # копируем только манифесты зависимостей
+RUN npm install                # этот слой переиспользуется из кэша, пока манифесты не менялись
+COPY . .                       # исходники копируются последними — их изменение не трогает слой с npm install</code></pre>
+<p>Тот же принцип для PHP/Composer: <code>COPY composer.json composer.lock ./</code> → <code>RUN composer
+install</code> → и только потом <code>COPY . .</code>.</p>
+</div>
+</details>
+
+<h3>3.3 Build context и .dockerignore</h3>
+<p><b>Build context</b> — это папка (обычно <code>.</code>), которую <code>docker build</code> целиком
+отправляет демону перед началом сборки: именно из неё берутся файлы для <code>COPY</code>/<code>ADD</code>.
+Если в этой папке лежит <code>node_modules</code> на полгига или <code>.git</code> — они тоже уедут демону,
+даже если ни разу не встречаются в <code>COPY</code>, просто замедляя отправку контекста. <code>.dockerignore</code>
+работает как <code>.gitignore</code> и исключает такие файлы из контекста:</p>
+<pre><code># .dockerignore
+node_modules
+.git
+.env
+*.md
+npm-debug.log</code></pre>
+<div class="fix-box"><span class="tag">✅ Частая ошибка</span>
+<p>Забытый <code>.dockerignore</code> с исключённым <code>.env</code> — самый частый способ случайно "запечь"
+секреты (пароли от БД, API-ключи) прямо в слой образа через <code>COPY . .</code>, откуда их потом можно
+достать даже из уже собранного образа командой <code>docker history</code> или просто распаковав слои. Секреты
+передаются через переменные окружения при запуске контейнера (раздел <a href="#sec-8">8</a>), а не копируются в
+образ.</p></div>
+
+<h3>3.4 COPY vs ADD</h3>
+<p><code>ADD</code> умеет две вещи сверх <code>COPY</code>: скачивать файл по URL и автоматически распаковывать
+локальные архивы (<code>.tar.gz</code> и т.д.). На практике это почти никогда не нужно и часто удивляет
+неожиданным поведением — общепринятая рекомендация: <b>всегда используйте <code>COPY</code></b>, пока явно не
+нужна распаковка архива при копировании.</p>
+
+<h3>3.5 Multi-stage build — коротко (подробно в шаге 2.5)</h3>
+<p>Multi-stage build — это несколько <code>FROM</code> в одном Dockerfile, где поздний стейдж копирует только
+готовый результат из раннего (например, скомпилированный бинарник), не таща за собой компилятор и
+инструменты сборки в финальный образ. Подробный рабочий пример — в шаге <a href="#step-2-5">2.5</a>, когда уже
+будет что оптимизировать.</p>
+
+<h3>3.6 Базовые образы: alpine vs slim vs distroless</h3>
+<table>
+<tr><th>Тип базового образа</th><th>Размер</th><th>Шелл внутри</th><th>Когда выбирать</th></tr>
+<tr><td><code>node:20</code> (полный, на Debian)</td><td>~1 ГБ</td><td>bash есть из коробки</td><td>для сборочных стейджей, где нужны инструменты</td></tr>
+<tr><td><code>node:20-slim</code> (Debian, урезанный)</td><td>~200 МБ</td><td>bash есть из коробки</td><td>хороший баланс — используем в этом лабе</td></tr>
+<tr><td><code>node:20-alpine</code></td><td>~180 МБ</td><td>только <code>sh</code> (ash из BusyBox), bash нужно ставить отдельно</td><td>минимальный размер, но осторожно с bash-скриптами</td></tr>
+<tr><td><code>gcr.io/distroless/*</code></td><td>минимальный</td><td>шелла нет вообще</td><td>максимальная безопасность production-образа, когда отладка через <code>exec</code> не нужна</td></tr>
+</table>
+<div class="bash-box">
+<span class="tag">🐚 BASH</span>
+<p>Раз в этом лабе задача — уверенно писать bash-entrypoint'ы, весь практический раздел <a href="#sec-9">9</a>
+использует <code>node:20-slim</code>, а не <code>alpine</code>: в Alpine нет полноценного bash по умолчанию,
+там только <code>sh</code> (реализация BusyBox, по возможностям близкая к <code>dash</code>). Скрипты с
+<code>#!/bin/bash</code> там просто не запустятся без <code>apk add bash</code>. Это не значит, что Alpine
+плохой — для production-образов после того, как entrypoint отлажен, переезд на Alpine + <code>apk add bash</code>
+(если bash-фичи реально нужны) — стандартная практика ради размера.</p>
+</div>
+
+<h2 id="sec-4"><label class="done-label"><input type="checkbox" class="done" data-key="sec-4"></label>4. Bash с нуля: параллельный трек <a class="anchor" href="#sec-4">#</a></h2>
+<p>Это не курс bash "вообще" — это ровно тот набор конструкций, который встречается в 95% entrypoint-скриптов.
+Цель — не выучить bash как второй язык программирования, а перестать бояться читать и писать 20–40-строчный
+скрипт, который что-то проверяет, ждёт и запускает основной процесс.</p>
+
+<h3>4.1 Shebang и запуск скрипта</h3>
+<pre><code>#!/usr/bin/env bash
+echo "Привет из bash"</code></pre>
+<p>Первая строка — <b>shebang</b> — говорит системе, каким интерпретатором запускать файл, если его исполняют
+напрямую (<code>./script.sh</code>), а не через <code>bash script.sh</code>. <code>#!/usr/bin/env bash</code>
+находит bash через <code>PATH</code> — это переносимее, чем жёстко прописанный <code>#!/bin/bash</code>, потому
+что bash не всегда лежит по одному и тому же пути (особенно на macOS с Homebrew). Чтобы запустить скрипт напрямую,
+у файла должен быть флаг исполняемости:</p>
+<pre><code>chmod +x entrypoint.sh
+./entrypoint.sh</code></pre>
+
+<h3>4.2 Переменные и подстановка команд</h3>
+<pre><code>NAME="Docker Lab"          # объявление — БЕЗ пробелов вокруг "="
+echo "Привет, $NAME"        # использование — с $
+echo "Привет, ${NAME}!"     # фигурные скобки — когда сразу за переменной идёт текст без разделителя
+
+CURRENT_DATE=$(date)        # command substitution: результат команды попадает в переменную
+echo "Сейчас: $CURRENT_DATE"
+
+echo "Пользователь: $USER, дом: $HOME"   # переменные окружения ведут себя так же, как обычные</code></pre>
+<div class="insight-box">
+<span class="tag">💡 Всегда берите переменные в кавычки: "$VAR", не $VAR</span>
+<p>Без кавычек bash сначала подставляет значение переменной, а затем ещё раз разбивает результат по пробелам
+(word splitting) и раскрывает символы вроде <code>*</code>. Если в значении переменной есть пробел (частый случай
+— пути к файлам), <code>rm $FILE</code> может неожиданно превратиться в удаление нескольких файлов вместо одного.
+<code>rm "$FILE"</code> всегда безопасен. Это правило без исключений для entrypoint-скриптов.</p>
+</div>
+
+<h3>4.3 Условия и коды завершения</h3>
+<p>Каждая команда в Unix при завершении возвращает <b>exit code</b> — число от 0 до 255, где <code>0</code>
+значит "успех", любое другое — "ошибка" (конкретное число часто указывает на тип ошибки). Bash хранит код
+последней выполненной команды в специальной переменной <code>$?</code>:</p>
+<pre><code>ls /tmp
+echo $?      # 0, если /tmp существует
+
+ls /nonexistent
+echo $?      # 2 (или другое ненулевое число) — команда не нашла файл</code></pre>
+<p>Условия чаще всего пишут через <code>if</code> и <code>test</code> (короткая форма — квадратные скобки):</p>
+<pre><code>if [ -f "/app/config.json" ]; then
+  echo "Конфиг найден"
+else
+  echo "Конфига нет — использую значения по умолчанию"
+fi
+
+if [ "$APP_ENV" = "production" ]; then
+  echo "Прод-режим"
+fi</code></pre>
+<table>
+<tr><th>Оператор</th><th>Проверяет</th></tr>
+<tr><td><code>-f путь</code></td><td>существует и является обычным файлом</td></tr>
+<tr><td><code>-d путь</code></td><td>существует и является директорией</td></tr>
+<tr><td><code>-z строка</code></td><td>строка пустая</td></tr>
+<tr><td><code>-n строка</code></td><td>строка непустая</td></tr>
+<tr><td><code>строка1 = строка2</code></td><td>строковое равенство (в <code>[ ]</code> — один знак <code>=</code>, не <code>==</code>)</td></tr>
+<tr><td><code>число1 -eq число2</code></td><td>числовое равенство (<code>-eq</code>, <code>-lt</code>, <code>-gt</code> и т.д. — только для чисел)</td></tr>
+</table>
+<div class="bash-box">
+<span class="tag">🐚 BASH</span>
+<p><code>[ ]</code> — это на самом деле вызов команды <code>test</code> (пробелы вокруг скобок обязательны, это
+её аргументы). <code>[[ ]]</code> — расширенная конструкция самого bash (не работает в sh/dash), которая
+безопаснее с непроцитированными переменными и поддерживает <code>&amp;&amp;</code>/<code>||</code> и сравнение
+по маске (<code>==</code> с <code>*</code>). Для entrypoint-скриптов, где заранее известно, что интерпретатор —
+именно bash, <code>[[ ]]</code> — более безопасный выбор по умолчанию.</p>
+</div>
+
+<h3>4.4 Циклы и функции</h3>
+<pre><code># цикл по списку
+for service in postgres redis rabbitmq; do
+  echo "Проверяю $service..."
+done
+
+# цикл "пока условие истинно" — основа для wait-for-скриптов (см. шаг 2.3)
+COUNT=0
+until [ "$COUNT" -ge 5 ]; do
+  echo "Попытка $COUNT"
+  COUNT=$((COUNT + 1))
+  sleep 1
+done
+
+# функция
+wait_for_port() {
+  local host="$1"
+  local port="$2"
+  echo "Проверяю $host:$port"
+}
+wait_for_port "postgres" "5432"</code></pre>
+<p><code>local</code> внутри функции ограничивает область видимости переменной этой функцией — без него переменная
+стала бы глобальной для всего скрипта, что в скриптах длиннее десятка строк быстро приводит к трудноуловимым
+багам.</p>
+
+<h3>4.5 Позиционные параметры: $1, $@, $#</h3>
+<pre><code>#!/usr/bin/env bash
+echo "Имя скрипта: $0"
+echo "Первый аргумент: $1"
+echo "Второй аргумент: $2"
+echo "Количество аргументов: $#"
+echo "Все аргументы: $@"</code></pre>
+<div class="insight-box">
+<span class="tag">💡 "$@" vs $@ — критично для entrypoint-скриптов</span>
+<p>Это ключевая конструкция раздела <a href="#sec-5">5</a>: <code>"$@"</code> (в кавычках) разворачивается в
+список аргументов, где <b>каждый аргумент остаётся отдельным словом</b>, даже если внутри есть пробелы —
+именно так нужно передавать команду дальше. <code>$@</code> без кавычек снова попадает под word splitting из
+пункта 4.2 и может поломать аргументы с пробелами. Правило: в entrypoint-скриптах всегда <code>"$@"</code>,
+никогда голый <code>$@</code>.</p>
+</div>
+
+<h3>4.6 set -e, set -u, set -o pipefail — три строки, которые должны быть в каждом entrypoint</h3>
+<pre><code>#!/usr/bin/env bash
+set -euo pipefail</code></pre>
+<table>
+<tr><th>Флаг</th><th>Без него</th><th>С ним</th></tr>
+<tr><td><code>-e</code></td><td>скрипт продолжает выполняться после команды с ненулевым exit-кодом</td><td>скрипт немедленно останавливается при первой же ошибке — контейнер не запустится "наполовину рабочим"</td></tr>
+<tr><td><code>-u</code></td><td>обращение к необъявленной переменной молча даёт пустую строку</td><td>обращение к необъявленной переменной — это ошибка, скрипт останавливается (ловит опечатки вроде <code>$DB_HOSTT</code>)</td></tr>
+<tr><td><code>-o pipefail</code></td><td>в конвейере <code>cmd1 | cmd2</code> код возврата — это код <code>cmd2</code>, даже если <code>cmd1</code> упал</td><td>весь конвейер считается упавшим, если упала любая команда в нём</td></tr>
+</table>
+<div class="fix-box"><span class="tag">✅ Как аккуратно обойти -u для опциональных переменных</span>
+<p>С <code>set -u</code> обращение к переменной, которая может быть не задана (например, необязательный
+<code>APP_NAME</code>), упадёт с ошибкой. Синтаксис <code>${APP_NAME:-контейнер}</code> подставляет значение по
+умолчанию, если переменная не задана или пуста, не нарушая <code>set -u</code>:</p>
+<pre><code>echo "Имя приложения: ${APP_NAME:-контейнер}"</code></pre></div>
+
+<h3>4.7 Мини-практика</h3>
+<p>Прежде чем переходить к разделу 5, стоит написать (не копировать) вручную такой скрипт и прогнать его локально
+через <code>bash check.sh production</code> и <code>bash check.sh</code> без аргумента:</p>
+<pre><code>#!/usr/bin/env bash
+set -euo pipefail
+
+ENV="${1:-development}"
+
+if [ "$ENV" = "production" ]; then
+  echo "⚠️  Запуск в PRODUCTION — проверяю обязательные переменные"
+  if [ -z "${DB_PASSWORD:-}" ]; then
+    echo "Ошибка: DB_PASSWORD не задана для продакшена" >&2
+    exit 1
+  fi
+else
+  echo "Запуск в режиме: $ENV"
+fi
+
+echo "Проверка пройдена, аргументов было: $#"</code></pre>
+<p>Если это читается без запинки и понятно, почему тут <code>${1:-development}</code>, а не просто <code>$1</code>
+— раздел 5 пойдёт легко.</p>
+
+<h2 id="sec-5"><label class="done-label"><input type="checkbox" class="done" data-key="sec-5"></label>5. ENTRYPOINT vs CMD: где встречаются Docker и Bash <a class="anchor" href="#sec-5">#</a></h2>
+
+<h3>5.1 Shell form vs exec form</h3>
+<p>И <code>RUN</code>, и <code>CMD</code>, и <code>ENTRYPOINT</code> можно написать в двух формах:</p>
+<pre><code># shell form — строка выполняется через /bin/sh -c "..."
+CMD node server.js
+
+# exec form — JSON-массив, выполняется НАПРЯМУЮ, без промежуточного шела
+CMD ["node", "server.js"]</code></pre>
+<div class="insight-box">
+<span class="tag">💡 Почему exec form почти всегда правильный выбор</span>
+<p>В shell form процесс <code>node</code> запускается как <i>дочерний</i> процесс шела <code>/bin/sh -c</code>,
+а сам шел становится PID 1 контейнера. В exec form процесс из массива запускается напрямую и <b>сам становится
+PID 1</b>. Разница критична при обработке сигналов остановки — подробно разберём в шаге <a href="#step-2-4">2.4</a>.
+Практическое правило: <code>CMD</code>/<code>ENTRYPOINT</code> — всегда в exec form (JSON-массив), кроме случаев,
+когда команде реально нужны возможности шела (переменные, конвейеры) прямо в этой строке.</p>
+</div>
+
+<h3>5.2 CMD и ENTRYPOINT по отдельности и вместе</h3>
+<table>
+<tr><th></th><th>CMD</th><th>ENTRYPOINT</th></tr>
+<tr><td>Назначение</td><td>аргументы/команда по умолчанию</td><td>основная программа, которая всегда запускается</td></tr>
+<tr><td>Переопределяется</td><td>легко: любой аргумент после <code>docker run image</code></td><td>только флагом <code>--entrypoint</code>, редко нужно</td></tr>
+<tr><td>Если задан только один</td><td>работает как обычная команда запуска</td><td>работает как обычная команда запуска</td></tr>
+</table>
+<p>Самый полезный паттерн — использовать оба вместе: <code>ENTRYPOINT</code> задаёт скрипт-обёртку, который
+всегда выполняется первым (проверки, подготовка), а <code>CMD</code> задаёт то, что этот скрипт должен запустить
+в конце. Тогда <code>CMD</code> можно переопределить при запуске, не трогая логику подготовки:</p>
+<pre><code>ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["node", "server.js"]</code></pre>
+<pre><code># обычный запуск — выполнится entrypoint.sh, а в конце CMD
+docker run myapp
+
+# переопределить CMD, entrypoint.sh всё равно выполнится первым
+docker run myapp node debug.js
+docker run myapp sh    # зайти в контейнер интерактивным шелом вместо запуска сервера,
+                        # но ПОСЛЕ всех проверок из entrypoint.sh</code></pre>
+
+<h3>5.3 Как аргументы CMD попадают в entrypoint-скрипт</h3>
+<p>Здесь замыкается связь с разделом <a href="#sec-4">4</a>: то, что записано в <code>CMD</code> (или передано
+после <code>docker run image ...</code>), Docker передаёт скрипту из <code>ENTRYPOINT</code> как обычные
+позиционные аргументы <code>$1 $2 ...</code>. Задача скрипта — сделать свою работу, а затем <b>передать
+управление</b> этим аргументам как настоящей команде. Именно для этого нужна конструкция <code>exec "$@"</code>
+в конце entrypoint-скрипта:</p>
+<pre><code>#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== Подготовка перед запуском ==="
+echo "Меня вызвали с аргументами: $@"
+
+exec "$@"   # заменяет ТЕКУЩИЙ процесс bash процессом из аргументов, не порождая новый</code></pre>
+<div class="insight-box">
+<span class="tag">💡 exec — это не "запустить", а "стать"</span>
+<p>Без <code>exec</code> команда <code>"$@"</code> запустилась бы как <i>дочерний</i> процесс bash-скрипта, а
+сам bash остался бы висеть родителем и, что важнее, — <b>оставался бы PID 1</b>, а не ваше приложение. С
+<code>exec</code> процесс bash <i>заменяется</i> процессом приложения — тот же PID, но другой код внутри. Это
+не оптимизация, а необходимость: без неё сигналы остановки контейнера (раздел <a href="#step-2-4">2.4</a>) будут
+приходить в bash, а не в ваше Node.js/PHP-приложение, и оно не узнает, что его просят завершиться.</p>
+</div>
+
+<h3>5.4 Собираем полный пример</h3>
+<pre><code># Dockerfile
+FROM node:20-slim
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production
+COPY . .
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["node", "server.js"]</code></pre>
+<pre><code># entrypoint.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== Docker Lab entrypoint ==="
+echo "Дата запуска: $(date)"
+echo "APP_NAME=${APP_NAME:-не задано}"
+
+exec "$@"</code></pre>
+<p>Полностью рабочая версия этого файла с реальным приложением собирается в шаге <a href="#step-1-3">1.3</a>.</p>
+
+<h2 id="sec-6"><label class="done-label"><input type="checkbox" class="done" data-key="sec-6"></label>6. Тома и данные <a class="anchor" href="#sec-6">#</a></h2>
+
+<h3>6.1 Проблема, которую решают volumes</h3>
+<p>Файловая система контейнера живёт ровно столько, сколько живёт контейнер: <code>docker rm</code> удаляет её
+безвозвратно вместе со всеми данными. Для базы данных это неприемлемо — данные должны переживать пересоздание
+контейнера (обновление образа, деплой новой версии). Docker решает это тремя механизмами:</p>
+<table>
+<tr><th>Тип</th><th>Где физически хранится</th><th>Управляется Docker'ом</th><th>Типичное применение</th></tr>
+<tr><td><b>Named volume</b></td><td><code>/var/lib/docker/volumes/...</code> на хосте</td><td>да — создание, бэкап через <code>docker volume</code></td><td>данные БД, которые не нужно трогать руками</td></tr>
+<tr><td><b>Bind mount</b></td><td>любой путь на хосте, который вы указали сами</td><td>нет — это просто путь на диске</td><td>монтирование исходного кода при разработке (live reload)</td></tr>
+<tr><td><b>tmpfs mount</b></td><td>оперативная память хоста, не диск</td><td>да</td><td>временные секреты, кэш, который не должен пережить перезапуск</td></tr>
+</table>
+<pre><code># named volume
+docker run -v pgdata:/var/lib/postgresql/data postgres:16
+
+# bind mount — абсолютный путь хоста слева от двоеточия
+docker run -v /home/user/project/src:/app/src myapp
+
+# то же самое современным флагом --mount (более явный, рекомендуется в документации Docker)
+docker run --mount type=volume,src=pgdata,dst=/var/lib/postgresql/data postgres:16</code></pre>
+
+<h3>6.2 Частая боль: несовпадение UID/GID</h3>
+<div class="fix-box"><span class="tag">✅ Файлы созданы контейнером, но принадлежат root на хосте</span>
+<p>Если процесс внутри контейнера работает от root (UID 0, по умолчанию — если не указан <code>USER</code> в
+Dockerfile), а с хоста через bind mount смонтирована папка — все файлы, созданные контейнером в этой папке, на
+хосте тоже будут принадлежать root. Для разработки это раздражает (нельзя редактировать файлы своим
+пользователем без <code>sudo</code>), а в проде — дополнительный риск безопасности. Решение — явно указывать
+непривилегированного пользователя в Dockerfile (<code>USER node</code>, как в примере раздела <a href="#sec-3">3</a>)
+или совмещать UID контейнера с UID хоста через <code>--user $(id -u):$(id -g)</code>.</p></div>
+
+<h2 id="sec-7"><label class="done-label"><input type="checkbox" class="done" data-key="sec-7"></label>7. Сети в Docker <a class="anchor" href="#sec-7">#</a></h2>
+
+<h3>7.1 Драйверы сети</h3>
+<table>
+<tr><th>Драйвер</th><th>Поведение</th><th>Когда используется</th></tr>
+<tr><td><code>bridge</code> (по умолчанию)</td><td>виртуальный коммутатор на хосте, у каждого контейнера свой IP в приватной подсети</td><td>обычный режим для большинства приложений</td></tr>
+<tr><td><code>host</code></td><td>контейнер использует сетевой стек хоста напрямую, без изоляции</td><td>редко, когда критична производительность сети или нужен доступ к сети хоста как есть</td></tr>
+<tr><td><code>none</code></td><td>у контейнера вообще нет сети</td><td>изолированные вычисления без внешнего доступа</td></tr>
+<tr><td><code>overlay</code></td><td>сеть, растянутая между несколькими хостами (Swarm/Kubernetes)</td><td>вне рамок этого лаба — понадобится, если дойдёте до кластеров</td></tr>
+</table>
+
+<h3>7.2 Своя bridge-сеть и DNS между контейнерами</h3>
+<p>Контейнеры в сети по умолчанию (<code>docker0</code>) видят друг друга только по IP, который к тому же может
+меняться при пересоздании. Решение — создать свою сеть: Docker поднимает в ней встроенный DNS-сервер, который
+резолвит <b>имя контейнера (или имя сервиса в Compose) в его текущий IP</b>:</p>
+<pre><code>docker network create lab-net
+
+docker run -d --name postgres --network lab-net postgres:16-alpine
+docker run -d --name app --network lab-net myapp
+# внутри контейнера app можно обращаться к базе просто по имени:
+#   psql -h postgres -U postgres</code></pre>
+<div class="insight-box">
+<span class="tag">💡 Почему это работает, а на дефолтной сети — нет</span>
+<p>Встроенный DNS Docker обслуживает только <i>пользовательские</i> сети (созданные через <code>docker network
+create</code>) — сеть <code>bridge</code> по умолчанию, в которую попадают контейнеры без явного <code>--network</code>,
+такого DNS не имеет по историческим причинам обратной совместимости. Отсюда практическое правило: <b>всегда
+создавайте свою сеть</b> для проекта из нескольких контейнеров — это ровно то, что Compose делает автоматически
+за вас (раздел <a href="#sec-8">8</a>), поэтому там имена сервисов "просто работают".</p>
+</div>
+
+<h3>7.3 EXPOSE vs -p: документация vs реальность</h3>
+<p><code>EXPOSE 3000</code> в Dockerfile — это только метаданные, заметка "это приложение слушает порт 3000",
+она ничего не пробрасывает и не открывает. Реальный проброс порта с хоста на контейнер задаётся флагом
+<code>-p</code> при запуске:</p>
+<pre><code>docker run -p 8080:3000 myapp
+#            │    │
+#            │    └─ порт ВНУТРИ контейнера, тот самый, что слушает приложение
+#            └─ порт НА ХОСТЕ, куда стучится браузер/curl</code></pre>
+<p>Если контейнеры общаются друг с другом внутри одной Docker-сети (пункт 7.2) — им проброс через <code>-p</code>
+не нужен вообще, они видят порты друг друга напрямую по внутренней сети. <code>-p</code> нужен только для
+портов, к которым должен обращаться мир снаружи Docker (браузер на хосте, внешний клиент).</p>
+
+<h2 id="sec-8"><label class="done-label"><input type="checkbox" class="done" data-key="sec-8"></label>8. Docker Compose <a class="anchor" href="#sec-8">#</a></h2>
+
+<h3>8.1 Зачем Compose</h3>
+<p>Проект из двух и более контейнеров, поднятых вручную через <code>docker run</code> с кучей флагов сети,
+volume'ов и переменных — быстро становится нечитаемым и невоспроизводимым (легко забыть флаг). Docker Compose
+описывает весь стек одним YAML-файлом и поднимает/останавливает его одной командой.</p>
+
+<h3>8.2 Анатомия docker-compose.yml</h3>
+<pre><code>services:
+  app:
+    build: .                     # собрать образ из Dockerfile в этой папке (вместо готового image:)
+    ports:
+      - "3000:3000"
+    environment:
+      - APP_NAME=DockerLab       # можно списком key=value...
+      - DB_HOST=postgres          # ...или через отдельный map — см. 8.4
+    depends_on:
+      - postgres                  # ждёт СТАРТА контейнера postgres, но не его готовности — см. ниже
+    networks:
+      - lab-net
+
+  postgres:
+    image: postgres:16-alpine     # готовый образ из registry, без build
+    environment:
+      - POSTGRES_PASSWORD=labpass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - lab-net
+
+volumes:
+  pgdata:                          # объявление named volume — Compose создаст его сам
+
+networks:
+  lab-net:                         # объявление своей сети — DNS между сервисами работает "из коробки"</code></pre>
+<p>Команды: <code>docker compose up -d</code> поднимает весь стек в фоне, <code>docker compose down</code>
+останавливает и удаляет контейнеры (но не volumes — для этого нужен флаг <code>-v</code>), <code>docker compose
+logs -f app</code> — логи конкретного сервиса, <code>docker compose ps</code> — статус всех сервисов стека.</p>
+
+<h3>8.3 depends_on и healthcheck: "запущен" ≠ "готов принимать соединения"</h3>
+<div class="insight-box">
+<span class="tag">💡 Самая частая причина "database connection refused" при первом старте</span>
+<p>Обычный <code>depends_on: - postgres</code> гарантирует только порядок <i>старта контейнеров</i>: Compose
+запустит контейнер <code>postgres</code> раньше <code>app</code>. Но PostgreSQL внутри контейнера ещё какое-то
+время инициализирует базу данных <i>после</i> старта процесса — контейнер уже "запущен", а порт 5432 ещё не
+принимает соединения. Приложение стартует одновременно с этим окном и падает с ошибкой подключения. Именно
+поэтому entrypoint-скрипты с ожиданием готовности БД (шаг <a href="#step-2-3">2.3</a>) — это не блажь, а
+необходимость. Compose может частично закрыть эту проблему сам, если у сервиса объявлен <code>healthcheck</code>:</p>
+</div>
+<pre><code>services:
+  postgres:
+    image: postgres:16-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy   # ждать не старта, а именно "здорового" статуса healthcheck</code></pre>
+<p><code>condition: service_healthy</code> заставляет Compose ждать, пока <code>healthcheck</code> не начнёт
+проходить успешно, и только потом стартовать <code>app</code>. Это снимает часть проблемы на уровне оркестрации,
+но не всю: между "healthcheck прошёл" и "приложение подключилось" всё ещё может быть гонка, поэтому bash-проверка
+внутри самого entrypoint'а (шаг 2.3) остаётся хорошей практикой как второй рубеж защиты.</p>
+
+<h3>8.4 environment vs env_file vs .env</h3>
+<table>
+<tr><th>Способ</th><th>Где хранится</th><th>Когда использовать</th></tr>
+<tr><td><code>environment:</code> в compose-файле</td><td>прямо в YAML, коммитится в git</td><td>несекретные значения, одинаковые везде (например, <code>NODE_ENV=production</code>)</td></tr>
+<tr><td><code>env_file: .env.production</code></td><td>отдельный файл, путь указан явно</td><td>набор переменных для конкретного окружения</td></tr>
+<tr><td>файл <code>.env</code> рядом с compose-файлом</td><td>подхватывается Compose автоматически для подстановки <code>${VAR}</code> прямо в YAML</td><td>секреты и локальные настройки — <b>обязательно в <code>.gitignore</code></b></td></tr>
+</table>
+
+<h3>8.5 override-файлы и profiles — коротко</h3>
+<p><code>docker-compose.override.yml</code> подхватывается автоматически поверх основного файла и обычно хранит
+настройки только для локальной разработки (например, bind mount исходников для live reload), не попадая в
+production-конфигурацию. <code>profiles:</code> у сервиса позволяет исключать необязательные сервисы (например,
+Adminer для отладки БД) из обычного <code>docker compose up</code>, поднимая их явно через <code>--profile
+debug</code>, когда нужны.</p>
+
+<h2 id="sec-9"><label class="done-label"><input type="checkbox" class="done" data-key="sec-9"></label>9. Пошаговая сборка проекта (3 сессии) <a class="anchor" href="#sec-9">#</a></h2>
+<p>Проект — намеренно простой: маленькое Node.js-приложение и PostgreSQL. Ничего похожего на реальный продукт —
+вся сложность здесь искусственно сосредоточена в Docker и bash, а не в бизнес-логике. Структура к концу сессии 3:</p>
+<pre>
+docker-lab/
+├── docker-compose.yml
+├── .env
+├── .env.example
+└── app/
+    ├── Dockerfile
+    ├── .dockerignore
+    ├── package.json
+    ├── server.js
+    └── entrypoint.sh
+</pre>
+
+<div class="session-banner" id="session-1">Сессия 1 — первый образ и первый bash-entrypoint <span>Dockerfile → .dockerignore → entrypoint.sh → отладка</span></div>
+
+<div class="step" id="step-1-1"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-1"></label><span class="num">Шаг 1.1</span>Проект и первый Dockerfile<a class="anchor" href="#step-1-1">#</a></span><div class="step-body">
+<pre><code>mkdir -p docker-lab/app
+cd docker-lab/app</code></pre>
+<pre><code>// app/server.js
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.send(`Привет! Меня зовут ${process.env.APP_NAME || 'контейнер'}. Порт: ${PORT}.`);
+});
+
+app.listen(PORT, () => console.log(`Слушаю порт ${PORT}`));</code></pre>
+<pre><code>// app/package.json
+{
+  "name": "docker-lab-app",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "express": "^4.19.2" }
+}</code></pre>
+<pre><code># app/Dockerfile — версия 1, ещё без entrypoint.sh
+FROM node:20-slim
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production
+COPY . .
+EXPOSE 3000
+CMD ["node", "server.js"]</code></pre>
+<div class="why"><b>Зачем:</b> <code>node:20-slim</code>, а не <code>alpine</code> — см. раздел <a href="#sec-3">3.6</a>:
+нужен настоящий bash для entrypoint-скриптов сессии. Порядок <code>COPY package*.json</code> →
+<code>RUN npm install</code> → <code>COPY . .</code> — ради кэша слоёв (раздел <a href="#sec-3">3.2</a>): пока вы
+меняете только <code>server.js</code>, слой с <code>npm install</code> не пересобирается.</div>
+<pre><code>docker build -t docker-lab-app .
+docker run -d --name lab-app -p 3000:3000 docker-lab-app
+curl http://localhost:3000</code></pre>
+</div></div>
+
+<div class="step" id="step-1-2"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-2"></label><span class="num">Шаг 1.2</span>.dockerignore и контекст сборки<a class="anchor" href="#step-1-2">#</a></span><div class="step-body">
+<pre><code># app/.dockerignore
+node_modules
+.git
+.env
+npm-debug.log</code></pre>
+<div class="why"><b>Зачем:</b> без этого файла папка <code>node_modules</code> (если вы вдруг запускали
+<code>npm install</code> локально) уедет в build context демону при каждой сборке, замедляя отправку контекста, и
+рискует затереть <code>node_modules</code>, собранный внутри контейнера под его архитектуру, локальной версией под
+вашу ОС. См. раздел <a href="#sec-3">3.3</a>.</div>
+<pre><code>docker build -t docker-lab-app . --progress=plain 2>&1 | grep "transferring context"
+# сравните размер контекста до и после появления .dockerignore</code></pre>
+</div></div>
+
+<div class="step" id="step-1-3"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-3"></label><span class="num">Шаг 1.3</span>Первый bash-entrypoint<a class="anchor" href="#step-1-3">#</a></span><div class="step-body">
+<pre><code>#!/usr/bin/env bash
+# app/entrypoint.sh
+set -euo pipefail
+
+echo "=== Docker Lab entrypoint ==="
+echo "Дата запуска: $(date)"
+echo "Кто я: $(whoami)"
+echo "APP_NAME=${APP_NAME:-не задано}"
+
+exec "$@"</code></pre>
+<pre><code># app/Dockerfile — версия 2, с entrypoint.sh
+FROM node:20-slim
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production
+COPY . .
+RUN chmod +x entrypoint.sh
+EXPOSE 3000
+ENTRYPOINT ["./entrypoint.sh"]
+CMD ["node", "server.js"]</code></pre>
+<div class="why"><b>Зачем:</b> <code>chmod +x</code> выполняется ВНУТРИ образа (в <code>RUN</code>), а не только у
+вас на диске — права на исполняемость, выставленные локально, не всегда переживают копирование в образ
+одинаково на всех ОС (особенно Windows). <code>exec "$@"</code> в конце — передача управления команде из
+<code>CMD</code>, разбор в разделе <a href="#sec-5">5.3</a>.</div>
+<pre><code>docker build -t docker-lab-app .
+docker run --rm -e APP_NAME=Meeymirita -p 3000:3000 docker-lab-app</code></pre>
+<div class="bash-box"><span class="tag">🐚 BASH</span>
+<p>Проверьте: уберите <code>exec</code> перед <code>"$@"</code> (оставьте просто <code>"$@"</code>) и
+пересоберите образ. Приложение всё ещё запустится и ответит на <code>curl</code> — разница не видна на этом
+шаге. Она станет заметна в шаге <a href="#step-2-4">2.4</a>, когда дело дойдёт до остановки контейнера сигналом.
+Верните <code>exec</code> обратно перед тем, как идти дальше.</p></div>
+</div></div>
+
+<div class="step" id="step-1-4"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-4"></label><span class="num">Шаг 1.4</span>run, exec, logs, inspect<a class="anchor" href="#step-1-4">#</a></span><div class="step-body">
+<p>Не переходите к шагу 1.5, пока каждая команда ниже не отработает и не станет понятно её назначение:</p>
+<pre><code>docker run -d --name lab-app -e APP_NAME=Meeymirita -p 3000:3000 docker-lab-app
+docker logs lab-app                       # должны увидеть вывод entrypoint.sh: дату, whoami, APP_NAME
+docker exec -it lab-app bash              # зайти внутрь — теперь это настоящий bash, не sh
+  ps aux                                    # внутри контейнера: PID 1 — это node, не entrypoint.sh (см. 5.3)
+  cat /app/server.js
+  exit
+docker inspect lab-app --format '{{.State.Status}}'
+docker inspect lab-app --format '{{json .Config.Env}}'
+docker stop lab-app</code></pre>
+<div class="fix-box"><span class="tag">✅ Если docker exec ... bash пишет "executable file not found"</span>
+<p>Значит образ собрался с <code>alpine</code> вместо <code>slim</code>, либо Dockerfile был изменён без
+пересборки. Проверьте <code>FROM</code> в Dockerfile и пересоберите: <code>docker build -t docker-lab-app .</code>
+— <code>docker run</code> использует образ, каким он был на момент последней сборки, а не текущий Dockerfile.</p></div>
+</div></div>
+
+<div class="step" id="step-1-5"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-5"></label><span class="num">Шаг 1.5</span>Bash-практика: усложняем entrypoint<a class="anchor" href="#step-1-5">#</a></span><div class="step-body">
+<p>Добавляем реальную логику — проверку обязательной переменной и разное поведение в зависимости от окружения,
+используя конструкции раздела <a href="#sec-4">4</a>:</p>
+<pre><code>#!/usr/bin/env bash
+# app/entrypoint.sh — версия 2
+set -euo pipefail
+
+APP_ENV="${APP_ENV:-development}"
+
+echo "=== Docker Lab entrypoint ==="
+echo "Окружение: $APP_ENV"
+
+if [ "$APP_ENV" = "production" ]; then
+  if [ -z "${APP_NAME:-}" ]; then
+    echo "Ошибка: в production APP_NAME обязателен" >&2
+    exit 1
+  fi
+  echo "Продакшен-режим, приложение: $APP_NAME"
+else
+  echo "Режим разработки, APP_NAME=${APP_NAME:-контейнер}"
+fi
+
+exec "$@"</code></pre>
+<pre><code>docker build -t docker-lab-app .
+docker run --rm -e APP_ENV=production docker-lab-app        # должно упасть с exit 1 — нет APP_NAME
+echo $?                                                        # проверьте код возврата контейнера
+docker run --rm -e APP_ENV=production -e APP_NAME=Meeymirita -p 3000:3000 docker-lab-app   # ок</code></pre>
+<div class="why"><b>Зачем именно так:</b> <code>set -e</code> из раздела <a href="#sec-4">4.6</a> здесь не даёт
+скрипту "тихо" продолжить работу без обязательной переменной — контейнер явно падает с ненулевым кодом, что
+в оркестраторах (Compose, Kubernetes) сразу видно как ошибку конфигурации, а не как загадочное поведение
+приложения внутри.</div>
+</div></div>
+
+<div class="session-banner" id="session-2">Сессия 2 — данные, сеть и ожидание готовности сервиса <span>PostgreSQL → своя сеть → wait-for-скрипт → сигналы → multi-stage</span></div>
+
+<div class="step" id="step-2-1"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-2-1"></label><span class="num">Шаг 2.1</span>PostgreSQL и volume для данных<a class="anchor" href="#step-2-1">#</a></span><div class="step-body">
+<pre><code>docker volume create pgdata
+docker run -d --name lab-postgres \
+  -e POSTGRES_PASSWORD=labpass \
+  -e POSTGRES_DB=lab \
+  -v pgdata:/var/lib/postgresql/data \
+  postgres:16-alpine
+
+docker exec -it lab-postgres psql -U postgres -d lab -c "SELECT version();"</code></pre>
+<div class="why"><b>Зачем volume, а не просто оставить как есть:</b> без <code>-v pgdata:/var/lib/postgresql/data</code>
+данные живут только в слое контейнера (раздел <a href="#sec-6">6.1</a>) — <code>docker rm lab-postgres</code>
+уничтожит базу безвозвратно. Проверьте сами: остановите и удалите контейнер, поднимите заново с тем же
+<code>-v pgdata:...</code> — таблицы на месте.</div>
+</div></div>
+
+<div class="step" id="step-2-2"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-2-2"></label><span class="num">Шаг 2.2</span>Своя сеть и DNS между контейнерами<a class="anchor" href="#step-2-2">#</a></span><div class="step-body">
+<pre><code>docker network create lab-net
+
+docker rm -f lab-postgres
+docker run -d --name postgres --network lab-net \
+  -e POSTGRES_PASSWORD=labpass -e POSTGRES_DB=lab \
+  -v pgdata:/var/lib/postgresql/data \
+  postgres:16-alpine
+
+docker rm -f lab-app
+docker run -d --name app --network lab-net -p 3000:3000 \
+  -e APP_NAME=Meeymirita -e DB_HOST=postgres \
+  docker-lab-app
+
+docker exec -it app bash
+  getent hosts postgres     # покажет IP — DNS сети lab-net резолвит имя контейнера
+  exit</code></pre>
+<div class="why"><b>Зачем переименовали контейнер БД в <code>postgres</code>:</b> имя контейнера в
+пользовательской сети — это одновременно и его DNS-имя (раздел <a href="#sec-7">7.2</a>). Дальше в entrypoint'е
+приложение будет обращаться именно по этому имени, а не по IP, который может смениться при пересоздании
+контейнера.</div>
+</div></div>
+
+<div class="step" id="step-2-3"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-2-3"></label><span class="num">Шаг 2.3</span>wait-for-postgres.sh на bash<a class="anchor" href="#step-2-3">#</a></span><div class="step-body">
+<pre><code>#!/usr/bin/env bash
+# app/entrypoint.sh — версия 3, с ожиданием БД
+set -euo pipefail
+
+DB_HOST="${DB_HOST:-postgres}"
+DB_PORT="${DB_PORT:-5432}"
+MAX_TRIES=30
+TRIES=0
+
+echo "Жду PostgreSQL на ${DB_HOST}:${DB_PORT}..."
+
+until (echo > "/dev/tcp/${DB_HOST}/${DB_PORT}") 2>/dev/null; do
+  TRIES=$((TRIES + 1))
+  if [ "$TRIES" -ge "$MAX_TRIES" ]; then
+    echo "PostgreSQL не поднялся за $((MAX_TRIES * 2)) секунд — выхожу." >&2
+    exit 1
+  fi
+  echo "  ...ещё не готов (попытка $TRIES/$MAX_TRIES)"
+  sleep 2
+done
+
+echo "PostgreSQL доступен. Стартуем приложение."
+exec "$@"</code></pre>
+<div class="bash-box"><span class="tag">🐚 BASH</span>
+<p><code>/dev/tcp/HOST/PORT</code> — это не настоящий файл, а специальная возможность самого <b>bash</b> (не
+POSIX-стандарт, не работает в <code>sh</code>/<code>dash</code>): перенаправление в этот "путь" открывает
+обычное TCP-соединение. Именно ради таких вещей в разделе <a href="#sec-3">3.6</a> выбран <code>node:20-slim</code>
+с настоящим bash, а не Alpine со скудным <code>sh</code>. Цикл <code>until (...) 2>/dev/null; do ... done</code>
+— конструкция из раздела <a href="#sec-4">4.4</a>: "повторять, пока условие ложно"; <code>2>/dev/null</code>
+глушит ожидаемые ошибки "соединение отклонено" на каждой неудачной попытке, чтобы не засорять логи.</p></div>
+<div class="fix-box"><span class="tag">✅ Более переносимый вариант</span>
+<p>Если когда-нибудь придётся переносить логику на <code>sh</code> (например, ради Alpine в проде), замените
+трюк с <code>/dev/tcp</code> на утилиту <code>pg_isready</code> (идёт в клиентских пакетах PostgreSQL) или
+<code>nc -z "$DB_HOST" "$DB_PORT"</code> — обе работают одинаково в bash и в sh.</p></div>
+<pre><code>docker build -t docker-lab-app ./app
+docker run -d --name app --network lab-net -p 3000:3000 \
+  -e DB_HOST=postgres -e APP_NAME=Meeymirita docker-lab-app
+docker logs -f app     # должны увидеть "PostgreSQL доступен" почти сразу — контейнер БД уже поднят с прошлого шага
+
+# проверьте и обратный случай:
+docker rm -f postgres
+docker run -d --name app2 --network lab-net -e DB_HOST=postgres docker-lab-app
+docker logs -f app2     # цикл ожидания, затем ошибка и exit 1 через ~60 секунд</code></pre>
+</div></div>
+
+<div class="step" id="step-2-4"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-2-4"></label><span class="num">Шаг 2.4</span>PID 1, сигналы и trap<a class="anchor" href="#step-2-4">#</a></span><div class="step-body">
+<p>Проверяем на практике то, о чём предупреждал раздел <a href="#sec-5">5.3</a>. Сначала — как <b>должно</b>
+работать с <code>exec</code>:</p>
+<pre><code>docker run -d --name app3 --network lab-net -e DB_HOST=postgres docker-lab-app
+time docker stop app3
+# ожидание: остановился быстро (node получил SIGTERM напрямую, т.к. он PID 1 благодаря exec)</code></pre>
+<p>Теперь уберите <code>exec</code> из entrypoint.sh (просто <code>"$@"</code> без <code>exec</code>),
+пересоберите образ и повторите:</p>
+<pre><code>docker build -t docker-lab-app ./app
+docker run -d --name app4 --network lab-net -e DB_HOST=postgres docker-lab-app
+time docker stop app4
+# ожидание: остановка займёт заметно дольше — около 10 секунд</code></pre>
+<div class="insight-box">
+<span class="tag">💡 Почему без exec остановка "зависает" на 10 секунд</span>
+<p><code>docker stop</code> посылает <code>SIGTERM</code> процессу PID 1 и ждёт (по умолчанию 10 секунд) его
+корректного завершения, после чего принудительно убивает через <code>SIGKILL</code>. Без <code>exec</code>
+PID 1 — это сам bash-скрипт, а <code>node</code> — его дочерний процесс. Bash по умолчанию не пересылает
+полученные сигналы дочерним процессам автоматически, поэтому <code>node</code> просто не узнаёт о запросе на
+остановку — Docker ждёт истечения тайм-аута и убивает всё жёстко через <code>SIGKILL</code>, минуя graceful
+shutdown приложения (незакрытые соединения с БД, недописанные логи).</p>
+</div>
+<p>Верните <code>exec</code> обратно — это правильное поведение по умолчанию для 95% entrypoint-скриптов. Но
+иногда нужно и <i>своё</i> действие по сигналу (например, сначала аккуратно закрыть соединения, потом выйти) —
+для этого существует <code>trap</code>:</p>
+<pre><code>#!/usr/bin/env bash
+set -euo pipefail
+
+cleanup() {
+  echo "Получен SIGTERM, останавливаю дочерний процесс..."
+  kill -TERM "$child" 2>/dev/null || true
+  wait "$child"
+  echo "Дочерний процесс завершён, выхожу."
+}
+
+trap cleanup SIGTERM SIGINT
+
+"$@" &
+child=$!
+wait "$child"</code></pre>
+<div class="why"><b>Зачем такая альтернатива exec:</b> здесь bash сознательно остаётся PID 1 (никакого
+<code>exec</code>), запускает команду в фоне (<code>&amp;</code>), запоминает её PID (<code>$!</code>) и ждёт
+(<code>wait</code>). <code>trap cleanup SIGTERM SIGINT</code> перехватывает сигналы и выполняет свою функцию
+вместо стандартного поведения. Это сложнее и нужно редко — предпочитайте простой <code>exec "$@"</code>, пока
+реально не понадобится что-то сделать между сигналом и завершением процесса.</div>
+</div></div>
+
+<div class="step" id="step-2-5"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-2-5"></label><span class="num">Шаг 2.5</span>Multi-stage build<a class="anchor" href="#step-2-5">#</a></span><div class="step-body">
+<pre><code># app/Dockerfile — multi-stage
+# ---- Стейдж 1: сборка и тесты, тяжёлый ----
+FROM node:20-slim AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install                 # ВСЕ зависимости, включая devDependencies — нужны для тестов/линтера
+COPY . .
+RUN npm test || true             # в реальном проекте: без "|| true" — сборка должна падать при красных тестах
+
+# ---- Стейдж 2: финальный образ, лёгкий ----
+FROM node:20-slim
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production      # только production-зависимости
+COPY --from=builder /app/server.js ./server.js
+COPY entrypoint.sh ./
+RUN chmod +x entrypoint.sh
+EXPOSE 3000
+ENTRYPOINT ["./entrypoint.sh"]
+CMD ["node", "server.js"]</code></pre>
+<div class="why"><b>Зачем два FROM:</b> <code>COPY --from=builder</code> берёт готовый файл из первого стейджа,
+но финальный образ никогда не видит ни devDependencies, ни исходники тестов, ни сам факт, что тесты вообще
+запускались — их слоёв просто нет в итоговом образе. Для этого крошечного приложения разница в размере
+незаметна, но на реальном проекте с TypeScript/Webpack-сборкой или тяжёлыми dev-инструментами разница между
+"builder"-стейджем и финальным образом может быть в разы.</div>
+<pre><code>docker build -t docker-lab-app:multistage ./app
+docker images docker-lab-app   # сравните размеры версий, если сохраняли предыдущие теги</code></pre>
+</div></div>
+
+<div class="session-banner" id="session-3">Сессия 3 — Compose и Production Hell <span>Всё вместе → .env → restart policies → отладка без подсказок</span></div>
+
+<div class="step" id="step-3-1"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-3-1"></label><span class="num">Шаг 3.1</span>docker-compose.yml целиком<a class="anchor" href="#step-3-1">#</a></span><div class="step-body">
+<pre><code># сначала удалите всё, что поднимали руками в сессиях 1-2:
+docker rm -f app app2 app3 app4 postgres 2>/dev/null
+docker network rm lab-net 2>/dev/null</code></pre>
+<pre><code># docker-compose.yml
+services:
+  app:
+    build: ./app
+    ports:
+      - "3000:3000"
+    environment:
+      - APP_ENV=production
+      - APP_NAME=Meeymirita
+      - DB_HOST=postgres
+      - DB_PORT=5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lab-net
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=labpass
+      - POSTGRES_DB=lab
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - lab-net
+
+volumes:
+  pgdata:
+
+networks:
+  lab-net:</code></pre>
+<div class="why"><b>Зачем тут и healthcheck, и bash wait-for-скрипт одновременно:</b> раздел <a href="#sec-8">8.3</a>
+— <code>condition: service_healthy</code> откладывает старт <code>app</code>, пока Postgres не начнёт отвечать на
+<code>pg_isready</code>, но между этим моментом и реальной готовностью принимать соединения от <i>другого</i>
+контейнера в сети (не с localhost) всё ещё может быть небольшая гонка. Bash-скрипт внутри <code>app</code> —
+второй, независимый рубеж проверки той же готовности.</div>
+<pre><code>docker compose up -d --build
+docker compose logs -f app
+curl http://localhost:3000</code></pre>
+</div></div>
+
+<div class="step" id="step-3-2"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-3-2"></label><span class="num">Шаг 3.2</span>.env и секреты<a class="anchor" href="#step-3-2">#</a></span><div class="step-body">
+<pre><code># .env
+POSTGRES_PASSWORD=labpass
+APP_NAME=Meeymirita</code></pre>
+<pre><code># .env.example — коммитится в git, .env — нет
+POSTGRES_PASSWORD=
+APP_NAME=</code></pre>
+<pre><code># docker-compose.yml — заменяем захардкоженные значения на подстановку
+services:
+  app:
+    environment:
+      - APP_NAME=${APP_NAME}
+  postgres:
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}</code></pre>
+<pre><code># .gitignore
+.env</code></pre>
+<div class="why"><b>Зачем .env.example:</b> он документирует, какие переменные вообще нужны проекту, не раскрывая
+значений — новый разработчик копирует его в <code>.env</code> и заполняет своими значениями. Раздел
+<a href="#sec-8">8.4</a> разбирает разницу между этим способом и <code>env_file:</code>.</div>
+<pre><code>docker compose up -d --build   # Compose сам подхватит .env для подстановки ${...}</code></pre>
+</div></div>
+
+<div class="step" id="step-3-3"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-3-3"></label><span class="num">Шаг 3.3</span>restart policies и лимиты ресурсов<a class="anchor" href="#step-3-3">#</a></span><div class="step-body">
+<pre><code>services:
+  app:
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M</code></pre>
+<div class="why"><b>Зачем лимиты даже в лабе:</b> без ограничений один упавший в бесконечный цикл процесс внутри
+контейнера может выесть всю память хоста, положив заодно и другие контейнеры. <code>deploy.resources.limits</code>
+— это cgroups (раздел <a href="#sec-1">1.2</a>) в чистом виде: жёсткая граница, за которую процессу не дадут
+выйти.</div>
+<pre><code>docker compose up -d --build
+docker stats   # смотрите, как app держится в пределах 256M даже под нагрузкой
+
+# проверьте restart policy: убейте процесс app изнутри
+docker exec app kill 1
+docker compose ps   # app должен пересоздаться/перезапуститься сам благодаря unless-stopped</code></pre>
+</div></div>
+
+<div class="step" id="step-3-4"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-3-4"></label><span class="num">Шаг 3.4</span>Production Hell — без подсказок<a class="anchor" href="#step-3-4">#</a></span><div class="step-body">
+<p>Ниже — сознательно сломанный <code>docker-compose.yml</code> и entrypoint.sh, собранные из ошибок,
+которые реально встречаются у новичков. Задача: <b>не читать разбор ниже</b>, пока не найдёте и не почините все
+проблемы сами, отлаживая по слоям — build → run → network → volume → entrypoint, как советует раздел
+<a href="#sec-2">2.2</a>.</p>
+<pre><code># docker-compose.yml — production hell
+services:
+  app:
+    build: ./app
+    ports:
+      - "3000:8080"
+    environment:
+      - DB_HOST=postgresql
+      - APP_ENV=production
+    depends_on:
+      - db
+    networks:
+      - lab-net
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ./pgdata:/var/lib/postgres/data
+
+networks:
+  lab-net:</code></pre>
+<pre><code>#!/usr/bin/env bash
+# app/entrypoint.sh — production hell
+set -euo pipefail
+echo "Стартуем в режиме $APP_ENV"
+exec "$@"</code></pre>
+<p>Подсказка про метод, не про ответы: запустите <code>docker compose up --build</code> и читайте вывод построчно
+— первая же реальная ошибка почти всегда указывает на первый же баг в списке ниже.</p>
+<details class="deep">
+<summary>🔬 Разбор — открывать только после самостоятельной попытки</summary>
+<div class="deep-body">
+<ol>
+<li><b>Порт наружу.</b> <code>curl http://localhost:3000</code> не отвечает, хотя контейнер поднят: приложение
+слушает <code>3000</code> внутри, а проброшен <code>8080:внутри</code>. Правило раздела <a href="#sec-7">7.3</a> —
+проброс пишется <code>хост:контейнер</code>, тут перепутан порядок. Чинится на <code>"3000:3000"</code>.</li>
+<li><b>Имя хоста БД не совпадает с именем сервиса.</b> <code>DB_HOST=postgresql</code>, а сервис в Compose
+называется <code>db</code> — DNS раздела <a href="#sec-7">7.2</a> резолвит имена <i>сервисов</i>, а не
+произвольные строки. Чинится на <code>DB_HOST=db</code> (или сервис переименовывается в <code>postgresql</code>
+— главное, чтобы совпадало).</li>
+<li><b>set -u вместе с необязательной подстановкой без значения по умолчанию.</b> <code>APP_NAME</code>
+в entrypoint.sh нигде не задан ни в Compose, ни в <code>.env</code> — но в этой версии скрипта и не
+использовался, так что реальной ошибки здесь нет; это специально оставлено как "красная селёдка" — не всё, что
+выглядит подозрительно, обязательно баг.</li>
+<li><b>Неверный путь volume внутри контейнера Postgres.</b> Официальный образ <code>postgres</code> хранит
+данные в <code>/var/lib/postgresql/data</code> (с <code>ql</code>), а в compose-файле опечатка —
+<code>/var/lib/postgres/data</code>. База данных инициализируется каждый раз заново в невидимом слое
+контейнера, будто volume не работает вовсе — данные <i>физически</i> не там, где вы их монтируете.</li>
+<li><b>depends_on без healthcheck при этом наборе ошибок маскирует происходящее.</b> Даже почини́в имя хоста,
+без <code>condition: service_healthy</code> (раздел <a href="#sec-8">8.3</a>) есть шанс словить гонку при первом
+холодном старте — добавьте healthcheck для <code>db</code>, как в шаге <a href="#step-3-1">3.1</a>.</li>
+</ol>
+</div>
+</details>
+</div></div>
+
+<h2 id="sec-10"><label class="done-label"><input type="checkbox" class="done" data-key="sec-10"></label>10. Чек-лист концепций <a class="anchor" href="#sec-10">#</a></h2>
+<ul>
+<li>Контейнер vs виртуальная машина: общее ядро хоста, namespaces и cgroups как основа изоляции.</li>
+<li>Образ vs контейнер vs Dockerfile vs registry — и что из этого неизменяемо, а что имеет состояние.</li>
+<li>Слои и кэш сборки: почему порядок инструкций в Dockerfile напрямую влияет на скорость пересборки.</li>
+<li>Build context и .dockerignore; почему секреты нельзя копировать в образ через <code>COPY . .</code>.</li>
+<li>RUN — это время сборки, CMD/ENTRYPOINT — это время запуска контейнера.</li>
+<li>Shell form vs exec form; почему exec form почти всегда правильный выбор.</li>
+<li>ENTRYPOINT + CMD как связка "скрипт-обёртка + переопределяемая команда".</li>
+<li><code>exec "$@"</code> — зачем нужен именно <code>exec</code>, а не просто запуск команды.</li>
+<li>PID 1 и обработка сигналов: почему без <code>exec</code> <code>docker stop</code> "зависает" на таймауте.</li>
+<li>Bash: переменные и кавычки, <code>test</code>/<code>[[ ]]</code>, циклы, функции, <code>local</code>.</li>
+<li><code>set -e</code>, <code>set -u</code>, <code>set -o pipefail</code> — что каждый из них ловит.</li>
+<li>Позиционные параметры и разница между <code>"$@"</code> и голым <code>$@</code>.</li>
+<li>Named volume vs bind mount vs tmpfs — когда что использовать.</li>
+<li>Своя bridge-сеть и встроенный DNS Docker: почему имена контейнеров резолвятся только в пользовательских сетях.</li>
+<li>EXPOSE — это документация, <code>-p</code> — это реальный проброс порта.</li>
+<li><code>depends_on</code> vs <code>depends_on + healthcheck</code>: порядок старта контейнеров ≠ готовность сервиса.</li>
+<li>Multi-stage build: как убрать инструменты сборки и devDependencies из финального образа.</li>
+<li>restart policies и лимиты ресурсов (cgroups на практике через Compose).</li>
+</ul>
+
+<h2 id="sec-11"><label class="done-label"><input type="checkbox" class="done" data-key="sec-11"></label>11. Глоссарий терминов <a class="anchor" href="#sec-11">#</a></h2>
+<p class="glossary-item"><b>Образ (image)</b> — неизменяемый слепок файловой системы + метаданные о запуске; хранится слоями.</p>
+<p class="glossary-item"><b>Контейнер (container)</b> — запущенный или остановленный экземпляр образа: реальный процесс со своим ID и состоянием.</p>
+<p class="glossary-item"><b>Слой (layer)</b> — неизменяемый diff файловой системы, созданный одной инструкцией Dockerfile; кэшируется и переиспользуется между образами.</p>
+<p class="glossary-item"><b>Namespaces</b> — механизм ядра Linux, ограничивающий, что процесс видит (свою сеть, свои процессы, свою файловую систему).</p>
+<p class="glossary-item"><b>Cgroups</b> — механизм ядра Linux, ограничивающий, сколько ресурсов (CPU, память) может использовать процесс.</p>
+<p class="glossary-item"><b>Build context</b> — папка, целиком отправляемая демону перед сборкой; источник файлов для COPY/ADD.</p>
+<p class="glossary-item"><b>.dockerignore</b> — файл, исключающий пути из build context, аналог .gitignore.</p>
+<p class="glossary-item"><b>ENTRYPOINT</b> — основная программа образа, которая запускается всегда; обычно скрипт-обёртка с проверками.</p>
+<p class="glossary-item"><b>CMD</b> — аргументы или команда по умолчанию, легко переопределяемая при <code>docker run</code>.</p>
+<p class="glossary-item"><b>Exec form</b> — запись команды JSON-массивом (<code>["node","server.js"]</code>), выполняется без промежуточного шела.</p>
+<p class="glossary-item"><b>PID 1</b> — первый процесс в пространстве имён процессов контейнера; получает сигналы остановки напрямую от Docker.</p>
+<p class="glossary-item"><b>exec (bash)</b> — встроенная команда bash, заменяющая текущий процесс новым, без порождения дочернего.</p>
+<p class="glossary-item"><b>Shebang</b> — первая строка скрипта (<code>#!/usr/bin/env bash</code>), указывающая интерпретатор.</p>
+<p class="glossary-item"><b>Exit code</b> — числовой код завершения команды (0 — успех), доступен в bash через <code>$?</code>.</p>
+<p class="glossary-item"><b>set -euo pipefail</b> — три флага bash: остановка при ошибке, ошибка при необъявленной переменной, провал всего конвейера при провале любой команды в нём.</p>
+<p class="glossary-item"><b>trap</b> — команда bash, назначающая обработчик на получение сигнала (например, SIGTERM).</p>
+<p class="glossary-item"><b>Named volume</b> — управляемое Docker'ом постоянное хранилище данных, переживающее удаление контейнера.</p>
+<p class="glossary-item"><b>Bind mount</b> — монтирование произвольного пути хоста внутрь контейнера напрямую.</p>
+<p class="glossary-item"><b>Bridge network</b> — виртуальная сеть Docker; пользовательская bridge-сеть даёт встроенный DNS по именам контейнеров.</p>
+<p class="glossary-item"><b>Healthcheck</b> — периодическая проверка готовности сервиса, используемая для <code>depends_on: condition: service_healthy</code>.</p>
+<p class="glossary-item"><b>Multi-stage build</b> — Dockerfile с несколькими <code>FROM</code>, где финальный стейдж копирует только нужные артефакты из предыдущих.</p>
+
+<h2 id="sec-12"><label class="done-label"><input type="checkbox" class="done" data-key="sec-12"></label>12. Вопросы для самопроверки / собеседования <a class="anchor" href="#sec-12">#</a></h2>
+<ul>
+<li>Чем контейнер отличается от виртуальной машины на уровне ядра? Какие два механизма ядра Linux это обеспечивают?</li>
+<li>Опишите разницу между образом, контейнером и Dockerfile одной фразой на каждый термин.</li>
+<li>Почему порядок инструкций в Dockerfile влияет на скорость повторной сборки? Приведите пример неправильного и правильного порядка.</li>
+<li>Зачем нужен <code>.dockerignore</code>, и что может случиться, если в build context случайно попадёт файл <code>.env</code>?</li>
+<li>В чём разница между shell form и exec form у CMD/ENTRYPOINT, и как это влияет на то, какой процесс становится PID 1?</li>
+<li>Зачем в конце entrypoint-скрипта пишут <code>exec "$@"</code>, а не просто <code>"$@"</code>?</li>
+<li>Что произойдёт при <code>docker stop</code>, если PID 1 контейнера — это bash-скрипт без <code>exec</code>, а не сам процесс приложения?</li>
+<li>Чем <code>"$@"</code> в кавычках отличается от <code>$@</code> без кавычек?</li>
+<li>Что делают флаги <code>-e</code>, <code>-u</code> и <code>-o pipefail</code> у <code>set</code> — и какую ошибку каждый из них ловит?</li>
+<li>Named volume, bind mount и tmpfs — в чём разница и когда какой выбрать?</li>
+<li>Почему имена контейнеров резолвятся по DNS в пользовательской bridge-сети, но не в дефолтной?</li>
+<li>Чем <code>EXPOSE</code> в Dockerfile отличается от флага <code>-p</code> при запуске?</li>
+<li>Зачем нужен <code>healthcheck</code> вместе с обычным <code>depends_on</code>, если тот и так гарантирует порядок старта контейнеров?</li>
+<li>Как multi-stage build уменьшает итоговый образ, и что конкретно не попадает в финальный стейдж?</li>
+</ul>
+
+<h2 id="sec-13"><label class="done-label"><input type="checkbox" class="done" data-key="sec-13"></label>13. Что дальше: дорожная карта <a class="anchor" href="#sec-13">#</a></h2>
+<div class="fix-box"><span class="tag">✅ Возврат к Traefik Lab</span>
+<p>Теперь имеет смысл вернуться к разделам 1–9 Traefik Lab. Термины «контейнер», «образ», «сеть», «volume»,
+<code>docker-compose.yml</code>, <code>labels</code>, <code>depends_on</code> и entrypoint-подобные скрипты
+здоровья сервисов там больше не потребуют отдельного объяснения — весь фундамент под ними уже пройден в этом
+лабе. Начните с раздела 1 Traefik Lab (не с раздела 0 — он теперь избыточен) и идите по шагам сессии 1.</p></div>
+<table>
+<tr><th>Тема</th><th>Что это</th><th>Зачем после этого лаба</th><th>Почитать</th></tr>
+<tr><td>BuildKit и кэш-монтирование</td><td>современный движок сборки Docker с более умным кэшем (<code>--mount=type=cache</code>)</td><td>ускорение сборки в CI без хаков с порядком COPY</td><td><a href="https://docs.docker.com/build/cache/" target="_blank">docs.docker.com/build/cache</a></td></tr>
+<tr><td>Multi-stage build — подробнее</td><td>официальная документация с дополнительными паттернами</td><td>закрепить то, что делали в шаге 2.5</td><td><a href="https://docs.docker.com/build/building/multi-stage/" target="_blank">docs.docker.com/build/building/multi-stage</a></td></tr>
+<tr><td>ShellCheck</td><td>статический анализатор bash-скриптов, находит классические ошибки (забытые кавычки, неверные условия)</td><td>ловить баги в entrypoint-скриптах до их запуска в проде</td><td><a href="https://www.shellcheck.net/" target="_blank">shellcheck.net</a></td></tr>
+<tr><td>Docker Swarm / overlay-сети</td><td>встроенная в Docker оркестрация нескольких хостов</td><td>следующий шаг после Compose, если один сервер перестаёт хватать</td><td><a href="https://docs.docker.com/engine/swarm/" target="_blank">docs.docker.com/engine/swarm</a></td></tr>
+<tr><td>Traefik Lab, разделы 1–9</td><td>reverse proxy поверх ровно того Docker Compose, который теперь понятен</td><td>прямое продолжение этого лаба</td><td>файл <span class="file">Traefik_Lab_Plan_1_.html</span></td></tr>
+</table>
+
+</main>
+</div>
+<a class="totop" href="#top">↑ Наверх</a>
+
+<script>
+(function () {
+  var KEY = 'docker-bash-lab-progress', NAVKEY = 'docker-bash-lab-nav';
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+  var boxes = document.querySelectorAll('input.done');
+  function apply() {
+    var total = boxes.length, done = 0;
+    boxes.forEach(function (b) {
+      var k = b.dataset.key, on = !!state[k];
+      b.checked = on; if (on) done++;
+      var host = b.closest('.step') || b.closest('h2');
+      if (host) host.classList.toggle('is-done', on);
+      var nav = document.querySelector('.sidebar a[data-key="' + k + '"]');
+      if (nav) nav.classList.toggle('done', on);
+    });
+    document.getElementById('progress-fill').style.width = (total ? done / total * 100 : 0) + '%';
+    document.getElementById('progress-text').textContent = 'Пройдено: ' + done + ' / ' + total;
+  }
+  boxes.forEach(function (b) {
+    b.addEventListener('change', function () {
+      state[b.dataset.key] = b.checked;
+      localStorage.setItem(KEY, JSON.stringify(state));
+      apply();
+    });
+  });
+  document.getElementById('reset-progress').addEventListener('click', function () {
+    if (confirm('Сбросить все отметки?')) { state = {}; localStorage.removeItem(KEY); apply(); }
+  });
+  apply();
+
+  var toggle = document.getElementById('nav-toggle');
+  function setNav(collapsed) {
+    document.body.classList.toggle('nav-collapsed', collapsed);
+    localStorage.setItem(NAVKEY, collapsed ? '1' : '0');
+    toggle.textContent = collapsed ? '☰' : '✕';
+    toggle.title = collapsed ? 'Показать оглавление' : 'Скрыть оглавление';
+  }
+  toggle.addEventListener('click', function () { setNav(!document.body.classList.contains('nav-collapsed')); });
+  setNav(localStorage.getItem(NAVKEY) === '1' || window.innerWidth < 900);
+
+  document.querySelectorAll('.done-label').forEach(function (l) { l.addEventListener('click', function (e) { e.stopPropagation(); }); });
+})();
+</script>
+</body>
+</html>
