@@ -159,7 +159,7 @@ entrypoint-скрипты. Никакого Traefik, никакого reverse pr
 <span class="tag">КАК ПОЛЬЗОВАТЬСЯ</span>
 <ul>
 <li>Разделы <a href="#sec-1">1</a>–<a href="#sec-8">8</a> — теория, читать по порядку один раз, дальше возвращаться по ссылкам.</li>
-<li>Раздел <a href="#sec-4">4</a> — это не отступление, а часть плана: bash изучается параллельно с Docker, потому что реальные entrypoint-скрипты в разделе <a href="#sec-5">5</a> и в сессии <a href="#sec-9">9</a> написаны на нём.</li>
+<li>Раздел <a href="#sec-4">4</a> — это не отступление, а часть плана: bash изучается параллельно с Docker, потому что реальные entrypoint-скрипты в разделе <a href="#sec-5">5</a> и в разделе <a href="#sec-9">9</a> написаны на нём.</li>
 <li>Раздел <a href="#sec-9">9</a> — сборка по шагам, 3 сессии. У каждого шага: код → «Зачем» → «🔬 Под капотом» (раскрывается) → bash-разбор, если в шаге есть скрипт.</li>
 <li>Блоки <span class="tag" style="background:#b8860b;">🐚 BASH</span> разбирают синтаксис построчно — не пропускайте их даже если тянет сразу копировать код.</li>
 <li>Все команды даны для <code>docker compose</code> (Compose V2, без дефиса). Если у вас старый <code>docker-compose</code> — команды те же, но через дефис.</li>
@@ -224,7 +224,7 @@ PID (процесс видит только «свои» процессы и с�
 хостнейма и для пользователей. Контейнер — это процесс, запущенный в своём наборе namespace'ов.</li>
 <li><b>cgroups (control groups)</b> — ограничивают, <i>сколько ресурсов</i> процесс может использовать: CPU,
 память, диск, сеть. Именно cgroups стоят за флагами вроде <code>--memory</code> и <code>--cpus</code>, которые
-встретятся в разделе <a href="#step-3-3">3.3</a>.</li>
+встретятся в шаге <a href="#step-3-3">3.3</a>.</li>
 </ul>
 <p>Сам Docker — это удобная обвязка поверх более низкоуровневых инструментов: <code>dockerd</code> (демон)
 делегирует запуск контейнеров <code>containerd</code>, а тот, в свою очередь, — <code>runc</code>, который
@@ -277,7 +277,7 @@ docker run -d --name web -p 8080:80 nginx
 # наблюдение и управление
 docker ps                            # список запущенных контейнеров
 docker ps -a                         # + остановленные
-docker stop web                      # мягкая остановка (SIGTERM, потом SIGKILL — см. раздел 5)
+docker stop web                      # мягкая остановка (SIGTERM, потом SIGKILL — см. шаг 2.4)
 docker start web                     # снова запустить существующий (не пересоздавая) контейнер
 docker rm web                        # удалить остановленный контейнер
 docker rm -f web                     # остановить и сразу удалить</code></pre>
@@ -491,7 +491,7 @@ for service in postgres redis rabbitmq; do
   echo "Проверяю $service..."
 done
 
-# цикл "пока условие истинно" — основа для wait-for-скриптов (см. шаг 2.3)
+# цикл "пока условие ложно" — основа для wait-for-скриптов (см. шаг 2.3)
 COUNT=0
 until [ "$COUNT" -ge 5 ]; do
   echo "Попытка $COUNT"
@@ -619,7 +619,7 @@ exec "$@"   # заменяет ТЕКУЩИЙ процесс bash процесс
 <p>Без <code>exec</code> команда <code>"$@"</code> запустилась бы как <i>дочерний</i> процесс bash-скрипта, а
 сам bash остался бы висеть родителем и, что важнее, — <b>оставался бы PID 1</b>, а не ваше приложение. С
 <code>exec</code> процесс bash <i>заменяется</i> процессом приложения — тот же PID, но другой код внутри. Это
-не оптимизация, а необходимость: без неё сигналы остановки контейнера (раздел <a href="#step-2-4">2.4</a>) будут
+не оптимизация, а необходимость: без неё сигналы остановки контейнера (шаг <a href="#step-2-4">2.4</a>) будут
 приходить в bash, а не в ваше Node.js/PHP-приложение, и оно не узнает, что его просят завершиться.</p>
 </div>
 
@@ -658,13 +658,18 @@ exec "$@"</code></pre>
 <tr><td><b>tmpfs mount</b></td><td>оперативная память хоста, не диск</td><td>да</td><td>временные секреты, кэш, который не должен пережить перезапуск</td></tr>
 </table>
 <pre><code># named volume
-docker run -v pgdata:/var/lib/postgresql/data postgres:16
+docker run -v pgdata:/var/lib/postgresql/data postgres:17
 
 # bind mount — абсолютный путь хоста слева от двоеточия
 docker run -v /home/user/project/src:/app/src myapp
 
 # то же самое современным флагом --mount (более явный, рекомендуется в документации Docker)
-docker run --mount type=volume,src=pgdata,dst=/var/lib/postgresql/data postgres:16</code></pre>
+docker run --mount type=volume,src=pgdata,dst=/var/lib/postgresql/data postgres:17</code></pre>
+<p>У флага <code>-v</code>/<code>volumes:</code> есть необязательный третий сегмент после второго двоеточия —
+режим доступа: <code>хост:контейнер:ro</code> монтирует том только для чтения (контейнер не может изменить
+файлы), <code>:rw</code> — то же самое, что и по умолчанию, если сегмент не указан вовсе (чтение и запись).
+Пример: <code>-v ./config:/etc/app/config:ro</code> — конфиг доступен контейнеру, но не может быть случайно
+перезаписан изнутри.</p>
 
 <h3>6.2 Частая боль: несовпадение UID/GID</h3>
 <div class="fix-box"><span class="tag">✅ Файлы созданы контейнером, но принадлежат root на хосте</span>
@@ -692,7 +697,7 @@ Dockerfile), а с хоста через bind mount смонтирована п�
 резолвит <b>имя контейнера (или имя сервиса в Compose) в его текущий IP</b>:</p>
 <pre><code>docker network create lab-net
 
-docker run -d --name postgres --network lab-net postgres:16-alpine
+docker run -d --name postgres --network lab-net postgres:17-alpine
 docker run -d --name app --network lab-net myapp
 # внутри контейнера app можно обращаться к базе просто по имени:
 #   psql -h postgres -U postgres</code></pre>
@@ -739,7 +744,7 @@ volume'ов и переменных — быстро становится неч
       - lab-net
 
   postgres:
-    image: postgres:16-alpine     # готовый образ из registry, без build
+    image: postgres:17-alpine     # готовый образ из registry, без build
     environment:
       - POSTGRES_PASSWORD=labpass
     volumes:
@@ -754,7 +759,12 @@ networks:
   lab-net:                         # объявление своей сети — DNS между сервисами работает "из коробки"</code></pre>
 <p>Команды: <code>docker compose up -d</code> поднимает весь стек в фоне, <code>docker compose down</code>
 останавливает и удаляет контейнеры (но не volumes — для этого нужен флаг <code>-v</code>), <code>docker compose
-logs -f app</code> — логи конкретного сервиса, <code>docker compose ps</code> — статус всех сервисов стека.</p>
+logs -f app</code> — логи конкретного сервиса, <code>docker compose ps</code> — статус всех сервисов стека.
+Отдельный флаг — <code>docker compose up -d --scale &lt;сервис&gt;=&lt;N&gt;</code>: поднимает N независимых
+контейнеров этого сервиса из одного и того же образа (см. 1.3). Для этого у сервиса не должно быть
+фиксированного <code>container_name</code> и жёстко заданного <code>ports:</code> вида <code>"3000:3000"</code>
+(иначе N контейнеров начнут конфликтовать за одно и то же имя или порт хоста) — иными словами, масштабируемый
+сервис не пробрасывает порт наружу напрямую, а виден другим сервисам только по DNS-имени внутри сети.</p>
 
 <h3>8.3 depends_on и healthcheck: "запущен" ≠ "готов принимать соединения"</h3>
 <div class="insight-box">
@@ -768,7 +778,7 @@ logs -f app</code> — логи конкретного сервиса, <code>doc
 </div>
 <pre><code>services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -819,7 +829,7 @@ docker-lab/
 <div class="session-banner" id="session-1">Сессия 1 — первый образ и первый bash-entrypoint <span>Dockerfile → .dockerignore → entrypoint.sh → отладка</span></div>
 
 <div class="step" id="step-1-1"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-1-1"></label><span class="num">Шаг 1.1</span>Проект и первый Dockerfile<a class="anchor" href="#step-1-1">#</a></span><div class="step-body">
-<div class="note-box"><span class="tag">УЖЕ В РЕПО</span> Папка <code>app/</code> и <code>docs/</code> уже созданы пустыми (заглушки <code>.gitkeep</code>) — эту команду можно пропустить и писать <code>server.js</code>/<code>Dockerfile</code> прямо в <code>app/</code>, или удалить заглушку и создать заново.</div>
+<div class="note-box"><span class="tag">УЖЕ В РЕПО</span> Папка <code>app/</code> уже создана пустой (заглушка <code>.gitkeep</code>) — эту команду можно пропустить и писать <code>server.js</code>/<code>Dockerfile</code> прямо в <code>app/</code>, или удалить заглушку и создать заново.</div>
 <pre><code>mkdir -p docker-lab/app
 cd docker-lab/app</code></pre>
 <pre><code>// app/server.js
@@ -963,7 +973,7 @@ docker run -d --name lab-postgres \
   -e POSTGRES_PASSWORD=labpass \
   -e POSTGRES_DB=lab \
   -v pgdata:/var/lib/postgresql/data \
-  postgres:16-alpine
+  postgres:17-alpine
 
 docker exec -it lab-postgres psql -U postgres -d lab -c "SELECT version();"</code></pre>
 <div class="why"><b>Зачем volume, а не просто оставить как есть:</b> без <code>-v pgdata:/var/lib/postgresql/data</code>
@@ -979,7 +989,7 @@ docker rm -f lab-postgres
 docker run -d --name postgres --network lab-net \
   -e POSTGRES_PASSWORD=labpass -e POSTGRES_DB=lab \
   -v pgdata:/var/lib/postgresql/data \
-  postgres:16-alpine
+  postgres:17-alpine
 
 docker rm -f lab-app
 docker run -d --name app --network lab-net -p 3000:3000 \
@@ -1141,7 +1151,7 @@ services:
       - lab-net
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     restart: unless-stopped
     environment:
       - POSTGRES_PASSWORD=labpass
@@ -1218,8 +1228,8 @@ docker compose ps   # app должен пересоздаться/перезап
 <div class="step" id="step-3-4"><span class="step-head"><label class="done-label" title="Отметить шаг пройденным"><input type="checkbox" class="done" data-key="step-3-4"></label><span class="num">Шаг 3.4</span>Production Hell — без подсказок<a class="anchor" href="#step-3-4">#</a></span><div class="step-body">
 <p>Ниже — сознательно сломанный <code>docker-compose.yml</code> и entrypoint.sh, собранные из ошибок,
 которые реально встречаются у новичков. Задача: <b>не читать разбор ниже</b>, пока не найдёте и не почините все
-проблемы сами, отлаживая по слоям — build → run → network → volume → entrypoint, как советует раздел
-<a href="#sec-2">2.2</a>.</p>
+проблемы сами, отлаживая по слоям — build → run → network → volume → entrypoint, с помощью инструментов
+отладки из раздела <a href="#sec-2">2.2</a> (<code>logs</code>, <code>exec</code>, <code>inspect</code>).</p>
 <pre><code># docker-compose.yml — production hell
 services:
   app:
@@ -1235,7 +1245,7 @@ services:
       - lab-net
 
   db:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
@@ -1255,8 +1265,10 @@ exec "$@"</code></pre>
 <div class="deep-body">
 <ol>
 <li><b>Порт наружу.</b> <code>curl http://localhost:3000</code> не отвечает, хотя контейнер поднят: приложение
-слушает <code>3000</code> внутри, а проброшен <code>8080:внутри</code>. Правило раздела <a href="#sec-7">7.3</a> —
-проброс пишется <code>хост:контейнер</code>, тут перепутан порядок. Чинится на <code>"3000:3000"</code>.</li>
+слушает <code>3000</code> внутри, а проброшен как <code>"3000:8080"</code> (хост:контейнер) — то есть снаружи
+открыт правильный порт 3000, но Docker пересылает его на несуществующий внутри контейнера порт 8080. Правило
+раздела <a href="#sec-7">7.3</a> — проброс пишется <code>хост:контейнер</code>, а контейнерная часть должна
+совпадать с портом, который слушает приложение внутри. Чинится на <code>"3000:3000"</code>.</li>
 <li><b>Имя хоста БД не совпадает с именем сервиса.</b> <code>DB_HOST=postgresql</code>, а сервис в Compose
 называется <code>db</code> — DNS раздела <a href="#sec-7">7.2</a> резолвит имена <i>сервисов</i>, а не
 произвольные строки. Чинится на <code>DB_HOST=db</code> (или сервис переименовывается в <code>postgresql</code>
