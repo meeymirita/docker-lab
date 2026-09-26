@@ -40,4 +40,4 @@ Node.js (Express) + PostgreSQL, всё в Docker / Docker Compose. Устана�
 
 ---
 
-Часть сборного репозитория лабораторных работ — [submodule-group-lab](https://github.com/meeymirita/submodule-group-lab).
+Часть сборного репозитория лабораторных работ — [anitech-performance](https://github.com/meeymirita/anitech-performance).
