@@ -1,6 +1,6 @@
 # Docker + Bash Lab — крепкое владение с нуля
 
-![Docker](docker.png)
+![Docker](https://meeymirita-files.storage.yandexcloud.net/docker/docker.png)
 
 > **24.09.2026 — методичка вычитана и исправлена.** Что найдено и что поправлено — в [fixes/devops/docker.md](https://github.com/meeymirita/lab-fixes/blob/main/devops/docker.md) репозитория `lab-fixes`.
 
