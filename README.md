@@ -17,7 +17,7 @@ Node.js (Express) + PostgreSQL, всё в Docker / Docker Compose. Устана�
 
 ## Формат
 
-Методичка [`Docker_Bash_Lab.html`](Docker_Bash_Lab.html) — открывается в браузере, прогресс по чекбоксам сохраняется локально.
+Методичка [`docker.html`](docker.html) — открывается в браузере, прогресс по чекбоксам сохраняется локально.
 
 ## Что внутри
 
