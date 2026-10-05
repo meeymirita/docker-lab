@@ -17,7 +17,7 @@ Node.js (Express) + PostgreSQL, всё в Docker / Docker Compose. Устана�
 
 ## Формат
 
-Методичка [`docker.html`](docker.html) — открывается в браузере, прогресс по чекбоксам сохраняется локально.
+Методичка [`docker.html`](docker.html) ([открыть на сайте](https://anitech.meeymirita.ru/works/docker.html)) — открывается в браузере, прогресс по чекбоксам сохраняется локально.
 
 ## Что внутри
 
@@ -37,6 +37,10 @@ Node.js (Express) + PostgreSQL, всё в Docker / Docker Compose. Устана�
 - **Сессия 3** — Compose и Production Hell: всё вместе → `.env` → restart policies → отладка без подсказок
 
 В конце методички — явная точка возврата к Traefik Lab с указанием, какие термины оттуда теперь понятны без пояснений.
+
+## Лицензия и авторство
+
+Код — MIT, тексты — CC BY 4.0, обложки и иллюстрации не покрыты (см. [LICENSE](LICENSE)). Кто что сделал: [NOTICE](NOTICE).
 
 ---
 
