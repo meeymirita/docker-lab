@@ -45,3 +45,7 @@ Node.js (Express) + PostgreSQL, всё в Docker / Docker Compose. Устана�
 ---
 
 Часть сборного репозитория лабораторных работ — [anitech-performance](https://github.com/meeymirita/anitech-performance).
+
+## План развития
+
+План переписывания в большую лабу (11.10.2026): [`docker_lab_plan.md`](docker_lab_plan.md). Это план, не готовая методичка; текущая методичка `docker.html` пока без изменений.
