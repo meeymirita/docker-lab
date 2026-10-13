@@ -1,51 +1,41 @@
-# Docker + Bash Lab — крепкое владение с нуля
+# Docker Lab — контейнеры с нуля до релиза
 
 ![Docker](https://raw.githubusercontent.com/meeymirita/works-lab/main/images/docker.png)
 
-> **24.09.2026 — методичка вычитана и исправлена.** Что найдено и что поправлено — в [fixes/devops/docker.md](https://github.com/meeymirita/lab-fixes/blob/main/devops/docker.md) репозитория `lab-fixes`.
+Большая лаба по Docker: от «что такое контейнер» до собственного стека из образов, Compose-файлов, registry и CI. Сквозной проект — **CoffeeShop**: сайт на nginx, API на Node.js, база PostgreSQL 18 и Adminer. Он начинается с одного контейнера, а к концу превращается в стек, который поднимается одной командой на чистой машине и из готовых образов. Тот же проект едет дальше в Traefik, Kubernetes и Ansible: в сессии 11 ты сама упаковываешь его в чистую папку `starter/` (в репозитории её нет — её скопирует лаба-продолжение).
 
-**Статус: ⚪ методичка вычитана и проверена запуском (04.10.2026), прохождение впереди.**
-**Сложность: базовая по входу, но объёмная.** Не требует предыдущих лаб — рассчитана на полных новичков в контейнерах; Bash даётся параллельно, ровно в том объёме, который нужен для entrypoint-скриптов.
-
-## О чём
-
-Docker и Bash разобраны подробно и с нуля — то, на что в [Traefik Lab](https://github.com/meeymirita/traefik-lab) был выделен всего один вводный раздел. Здесь нет reverse proxy и multi-service архитектуры ради архитектуры — только сам Docker (образы, контейнеры, Dockerfile, тома, сети, Compose) и Bash как параллельный трек, потому что почти каждый Dockerfile и entrypoint-скрипт в реальных проектах написан именно на нём.
-
-## Стек
-
-Node.js (Express) + PostgreSQL, всё в Docker / Docker Compose. Устанавливать заранее ничего не нужно, кроме самого Docker — остальное даётся по ходу лабы.
-
-## Формат
-
-Методичка [`docker.html`](docker.html) ([открыть на сайте](https://anitech.meeymirita.ru/works/docker.html)) — открывается в браузере, прогресс по чекбоксам сохраняется локально.
+**Статус: ✅ методичка написана и вычитана (12 сессий, 77 шагов + справочные страницы); вычитка 13.10 — ассистентом (сверены все перекрёстные ссылки между шагами, тексты — с настоящими выводами прогона; найденное исправлено), все команды с выводом выполнены в изолированном Docker-в-Docker (Docker 29, Compose v5, PostgreSQL 18, Node 24, nginx 1.30); владелец лабу ещё не проходила. Не проверялось запуском: шаги «выполняется самостоятельно» (токен и аккаунт GitHub, GHCR, запуск workflow на GitHub), мультиплатформенная сборка `--platform`, отличия Docker Desktop на Mac (проброс файлов, `host`-сеть), `docker version`/`docker info` в шаге 1.3 сняты с настоящего Mac.**
 
 ## Что внутри
 
-- **Разбор с нуля** — проблема, которую решает Docker; чем контейнер отличается от виртуальной машины; образ vs контейнер vs Dockerfile vs registry; жизненный цикл контейнера и команды на каждый день; restart policy
-- **Образы и Dockerfile** — анатомия Dockerfile, слои и кэш сборки под капотом, build context и `.dockerignore`, `COPY` vs `ADD`, multi-stage build, `alpine` vs `slim` vs `distroless`
-- **Bash параллельным треком** — shebang, переменные, условия, циклы и функции, позиционные параметры, `set -e -u -o pipefail`
-- **ENTRYPOINT vs CMD** — shell form vs exec form, как аргументы `CMD` попадают в entrypoint-скрипт
-- **Тома и данные, сети** — проблема, которую решают volumes, несовпадение UID/GID, драйверы сети, своя bridge-сеть и DNS между контейнерами, `EXPOSE` vs `-p`
-- **Docker Compose** — анатомия `docker-compose.yml`, `depends_on` + healthcheck («запущен» ≠ «готов принимать соединения»), `environment` vs `env_file` vs `.env`
+- **12 сессий, 77 шагов, ~44 часа.** Азбука и установка → контейнеры и их жизненный цикл → образы и слои → Dockerfile полностью (кэш, `ENTRYPOINT`/`CMD`, `exec "$@"`) → multi-stage, BuildKit, безопасность образа, сканер → сети и DNS → тома, права, бэкап PostgreSQL → Compose: YAML, переменные, `healthcheck` → профили, `watch`, лимиты, dev/prod → registry, GHCR, GitHub Actions → итоговый проект, `starter/`, проверки релиза → итоговое ТЗ (сервисы отчёта и бэкапа, без готового ответа).
+- В каждом шаге блок «Если совсем просто» (бытовая аналогия) и во многих — схема; в каждой сессии шаг «🔨 Сломать → починить»; в сессиях 9 и 11 — «Production Hell» (пять поломок без подсказок, разбор под спойлером).
+- Справка: шпаргалка, справочник ошибок (симптом → причина → что делать), глоссарий, 52 вопроса на собеседование, «что дальше».
+- **Docker Swarm** в лабу не вошёл (решение владельца 13.10.2026: не нужен ни Traefik, ни Kubernetes, ни Ansible).
+- Режим: самостоятельная лаба, предыдущие проходить не нужно; Bash желателен, но не обязателен.
 
-## Пошаговая сборка проекта (3 сессии)
+## Файлы
 
-Проект нарочно простой — маленькое Node.js-приложение и PostgreSQL, вся сложность сосредоточена в Docker и bash, а не в бизнес-логике:
+| Файл | Что |
+|---|---|
+| `docker.html` | методичка (HTML-«бандл»; не править руками — собирается из `src/`) |
+| `src/*.md` | исходники: `00-meta.md`, `01…12-session.md`, `ref-*.md`, `gloss.md`, `run.json` |
+| `src/outputs.json` | настоящие выводы команд из Docker (подставляются в «Ожидаемый результат») |
+| `Dockerfile` | образ-«терминал» для сборки: docker CLI, Compose, bash, curl, jq, git |
+| `docker_lab_plan.md` | план лабы (11.10.2026) с пометкой о реализации |
 
-- **Сессия 1** — первый образ и первый bash-entrypoint: `Dockerfile` → `.dockerignore` → `entrypoint.sh` → отладка
-- **Сессия 2** — данные, сеть и ожидание готовности сервиса: PostgreSQL → своя сеть → wait-for-скрипт → сигналы → multi-stage
-- **Сессия 3** — Compose и Production Hell: всё вместе → `.env` → restart policies → отладка без подсказок
+## Как пересобрать методичку
 
-В конце методички — явная точка возврата к Traefik Lab с указанием, какие термины оттуда теперь понятны без пояснений.
+Из корня сборного репозитория `anitech-performance`. Блоки `bash run` выполняются в **изолированном Docker-в-Docker** (контейнер `docker-dind`, `src/run.json`: `{"dind": true}`): свой демон, свои образы и тома, твой настоящий Docker не затрагивается. Первый полный прогон скачивает около 2 ГБ образов и занимает 25–40 минут; нужен запущенный Docker.
+
+```bash
+python3 tools/build-manual.py docker --run                 # полный прогон с нуля (сбрасывает стенд)
+python3 tools/build-manual.py docker --run --sessions 7,8  # только эти сессии, стенд не сбрасывается
+python3 tools/build-manual.py docker                       # собрать из сохранённых выводов (Docker не нужен)
+python3 tools/build-manual.py docker --check               # только проверка структуры
+```
+
+После прогона стенд (`docker-dind`, тома `docker-dind-data`, `docker-work`, сеть `docker-net`) можно удалить: `docker rm -f docker-dind && docker volume rm docker-dind-data docker-work && docker network rm docker-net`.
 
 ## Лицензия и авторство
-
-Код — MIT, тексты — CC BY 4.0, обложки и иллюстрации не покрыты (см. [LICENSE](LICENSE)). Кто что сделал: [NOTICE](NOTICE).
-
----
-
-Часть сборного репозитория лабораторных работ — [anitech-performance](https://github.com/meeymirita/anitech-performance).
-
-## План развития
-
-План переписывания в большую лабу (11.10.2026): [`docker_lab_plan.md`](docker_lab_plan.md). Это план, не готовая методичка; текущая методичка `docker.html` пока без изменений.
+Код — MIT, тексты — CC BY 4.0, см. `LICENSE` и `NOTICE`.
